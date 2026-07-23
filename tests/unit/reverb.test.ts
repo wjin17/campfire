@@ -10,7 +10,7 @@ function energy(a: Float32Array, from: number, to: number): number {
 describe('generateHallIR', () => {
   const sr = 44100
   let s = 1
-  const rng = () => (s = (s * 16807) % 2147483647) / 2147483647
+  const rng = (): number => (s = (s * 16807) % 2147483647) / 2147483647
   const [l, r] = generateHallIR(sr, rng)
 
   it('is 3.2s stereo', () => {
