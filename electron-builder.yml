@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: karaoke-tmp
+  executableName: Karaoke
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
