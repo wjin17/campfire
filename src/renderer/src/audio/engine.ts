@@ -1,7 +1,10 @@
 import { generateHallIR } from './reverb'
 import { mixGains } from './mix'
+import { createAutotuneNode, type AutotuneHandle } from './autotune/autotune-node'
+import { scaleWeights, type NoteName, type Mode } from './autotune/scale'
 
 export interface Chain {
+  source: AudioNode
   micGain: GainNode
   dryGain: GainNode
   wetGain: GainNode
@@ -38,12 +41,15 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   const { dry, wet } = mixGains(0.35)
   dryGain.gain.value = dry
   wetGain.gain.value = wet
-  return { micGain, dryGain, wetGain, convolver, compressor }
+  return { source, micGain, dryGain, wetGain, convolver, compressor }
 }
 
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private chain: Chain | null = null
+  private autotune: AutotuneHandle | null = null
+  private root: NoteName = 'C'
+  private mode: Mode = 'chromatic'
   micStream: MediaStream | null = null
 
   async start(deviceId?: string): Promise<void> {
@@ -78,5 +84,38 @@ export class AudioEngine {
     const { dry, wet } = mixGains(v)
     this.chain.dryGain.gain.value = dry
     this.chain.wetGain.gain.value = wet
+  }
+
+  async enableAutotune(): Promise<void> {
+    if (!this.ctx || !this.chain || this.autotune) return
+    this.autotune = await createAutotuneNode(this.ctx)
+    this.chain.source.disconnect(this.chain.micGain)
+    this.chain.source.connect(this.autotune.node)
+    this.autotune.node.connect(this.chain.micGain)
+    this.applyScale()
+  }
+
+  disableAutotune(): void {
+    if (!this.chain || !this.autotune) return
+    this.chain.source.disconnect(this.autotune.node)
+    this.autotune.node.disconnect()
+    this.chain.source.connect(this.chain.micGain)
+    this.autotune = null
+  }
+
+  setAutotuneStrength(v: number): void {
+    this.autotune?.setControl(this.autotune.portMap.amount, v)
+  }
+
+  setAutotuneScale(root: NoteName, mode: Mode): void {
+    this.root = root
+    this.mode = mode
+    this.applyScale()
+  }
+
+  private applyScale(): void {
+    if (!this.autotune) return
+    const weights = scaleWeights(this.root, this.mode)
+    weights.forEach((w, i) => this.autotune!.setControl(this.autotune!.portMap.notes[i], w))
   }
 }
