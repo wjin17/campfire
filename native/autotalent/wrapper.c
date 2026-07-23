@@ -8,9 +8,12 @@ static const LADSPA_Descriptor *desc;
 static LADSPA_Handle inst;
 static LADSPA_Data controls[64];
 static LADSPA_Data *inbuf, *outbuf;
+static unsigned long block_cap;
 static int initialized;
 
 int at_init(unsigned long sample_rate, unsigned long max_block) {
+  if (inst) return 0;
+  block_cap = max_block;
   if (!initialized) {
     _init();
     initialized = 1;
@@ -45,4 +48,4 @@ float at_port_upper(unsigned long p) { return desc->PortRangeHints[p].UpperBound
 void at_set_control(unsigned long p, float v) { controls[p] = v; }
 float *at_in_ptr(void) { return inbuf; }
 float *at_out_ptr(void) { return outbuf; }
-void at_process(unsigned long n) { desc->run(inst, n); }
+void at_process(unsigned long n) { desc->run(inst, n > block_cap ? block_cap : n); }
