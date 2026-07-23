@@ -4,11 +4,12 @@ class AutotalentProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super()
     this.ready = false
+    this.failed = false
     const { wasmBytes, controls } = options.processorOptions
     this.port.onmessage = (e) => {
       if (e.data.type !== 'set') return
       if (this.ready) this.wasm.at_set_control(e.data.port, e.data.value)
-      else controls.push([e.data.port, e.data.value])
+      else if (!this.failed) controls.push([e.data.port, e.data.value])
     }
     const module = new WebAssembly.Module(wasmBytes)
     const instance = new WebAssembly.Instance(module, {
@@ -16,7 +17,11 @@ class AutotalentProcessor extends AudioWorkletProcessor {
       wasi_snapshot_preview1: stub()
     })
     this.wasm = instance.exports
-    if (this.wasm.at_init(sampleRate, 128) !== 0) return
+    if (this.wasm.at_init(sampleRate, 128) !== 0) {
+      this.failed = true
+      controls.length = 0
+      return
+    }
     this.inIdx = this.wasm.at_in_ptr() >> 2
     this.outIdx = this.wasm.at_out_ptr() >> 2
     for (const [p, v] of controls) this.wasm.at_set_control(p, v)

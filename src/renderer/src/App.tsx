@@ -21,9 +21,41 @@ export default function App(): React.JSX.Element {
     setDevices(all.filter((d) => d.kind === 'audioinput'))
   }
 
+  const micOnRef = useRef(micOn)
+  const deviceIdRef = useRef(deviceId)
+  const gainRef = useRef(gain)
+  const reverbRef = useRef(reverb)
   useEffect(() => {
-    navigator.mediaDevices.addEventListener('devicechange', refreshDevices)
-    return () => navigator.mediaDevices.removeEventListener('devicechange', refreshDevices)
+    micOnRef.current = micOn
+    deviceIdRef.current = deviceId
+    gainRef.current = gain
+    reverbRef.current = reverb
+  })
+
+  useEffect(() => {
+    const onDeviceChange = async (): Promise<void> => {
+      const all = await navigator.mediaDevices.enumerateDevices()
+      const inputs = all.filter((d) => d.kind === 'audioinput')
+      setDevices(inputs)
+      if (
+        micOnRef.current &&
+        deviceIdRef.current &&
+        !inputs.some((d) => d.deviceId === deviceIdRef.current)
+      ) {
+        setDeviceId('')
+        setAutotune(false)
+        try {
+          await engine.current.start()
+          engine.current.setMicGain(gainRef.current)
+          engine.current.setReverbMix(reverbRef.current)
+        } catch {
+          setMicOn(false)
+          setMicError('Mic access denied — allow it and retry')
+        }
+      }
+    }
+    navigator.mediaDevices.addEventListener('devicechange', onDeviceChange)
+    return () => navigator.mediaDevices.removeEventListener('devicechange', onDeviceChange)
   }, [])
 
   const toggleMic = async (): Promise<void> => {

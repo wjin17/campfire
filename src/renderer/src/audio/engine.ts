@@ -70,6 +70,7 @@ export class AudioEngine {
   stop(): void {
     this.micStream?.getTracks().forEach((t) => t.stop())
     this.ctx?.close()
+    this.autotune?.node.port.close()
     this.ctx = null
     this.chain = null
     this.micStream = null
@@ -92,11 +93,17 @@ export class AudioEngine {
   async enableAutotune(): Promise<void> {
     if (!this.ctx || !this.chain || this.autotune || this.autotuneLoading) return
     this.autotuneLoading = true
+    let handle: AutotuneHandle
     try {
-      this.autotune = await createAutotuneNode(this.ctx)
+      handle = await createAutotuneNode(this.ctx)
     } finally {
       this.autotuneLoading = false
     }
+    if (!this.ctx || !this.chain) {
+      handle.node.port.close()
+      return
+    }
+    this.autotune = handle
     this.chain.source.disconnect(this.chain.micGain)
     this.chain.source.connect(this.autotune.node)
     this.autotune.node.connect(this.chain.micGain)
@@ -107,6 +114,7 @@ export class AudioEngine {
     if (!this.chain || !this.autotune) return
     this.chain.source.disconnect(this.autotune.node)
     this.autotune.node.disconnect()
+    this.autotune.node.port.close()
     this.chain.source.connect(this.chain.micGain)
     this.autotune = null
   }
