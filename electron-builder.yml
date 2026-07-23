@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: karaoke-tmp
+appId: com.dobby.karaoke
+productName: Karaoke
 directories:
   buildResources: build
 files:
