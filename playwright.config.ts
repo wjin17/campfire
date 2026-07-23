@@ -5,7 +5,7 @@ export default defineConfig({
   webServer: {
     command: 'npx vite serve src/renderer --port 8788 --strictPort',
     url: 'http://localhost:8788/harness.html',
-    reuseExistingServer: true
+    reuseExistingServer: false
   },
   use: { baseURL: 'http://localhost:8788' }
 })
