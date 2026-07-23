@@ -35,6 +35,7 @@ export default function App(): React.JSX.Element {
     }
     try {
       setMicError(null)
+      setAutotuneError(false)
       await engine.current.start(deviceId || undefined)
       engine.current.setMicGain(gain)
       engine.current.setReverbMix(reverb)

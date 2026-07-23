@@ -73,6 +73,7 @@ export class AudioEngine {
     this.ctx = null
     this.chain = null
     this.micStream = null
+    this.autotune = null
   }
 
   setMicGain(v: number): void {
