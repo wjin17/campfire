@@ -47,6 +47,12 @@ function createWindow(): void {
   })
   yt.webContents.loadURL('https://www.youtube.com')
 
+  ipcMain.on('yt-back', () => {
+    if (yt.webContents.navigationHistory.canGoBack()) {
+      yt.webContents.navigationHistory.goBack()
+    }
+  })
+
   win.on('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

@@ -96,93 +96,109 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="bar">
-      <button onClick={toggleMic}>{micOn ? 'Mic Off' : 'Mic On'}</button>
-      <select value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
-        <option value="">Default mic</option>
-        {devices.map((d) => (
-          <option key={d.deviceId} value={d.deviceId}>
-            {d.label || 'Microphone'}
-          </option>
-        ))}
-      </select>
-      <label>
-        Gain
-        <input
-          type="range"
-          min="0"
-          max="2"
-          step="0.01"
-          value={gain}
-          onChange={(e) => {
-            setGain(+e.target.value)
-            engine.current.setMicGain(+e.target.value)
-          }}
-        />
-      </label>
-      <label>
-        Reverb
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={reverb}
-          onChange={(e) => {
-            setReverb(+e.target.value)
-            engine.current.setReverbMix(+e.target.value)
-          }}
-        />
-      </label>
-      <button
-        onClick={toggleAutotune}
-        disabled={!micOn || autotuneError}
-        title={autotuneError ? 'Autotune failed to load' : ''}
-      >
-        {autotune ? 'Autotune On' : 'Autotune Off'}
+      <button className="btn btn-nav" onClick={() => window.api.ytBack()}>
+        ← Back
       </button>
-      <select
-        value={mode}
-        disabled={!autotune}
-        onChange={(e) => {
-          const m = e.target.value as Mode
-          setMode(m)
-          engine.current.setAutotuneScale(root, m)
-        }}
-      >
-        <option value="chromatic">Chromatic</option>
-        <option value="major">Major</option>
-        <option value="minor">Minor</option>
-      </select>
-      <select
-        value={root}
-        disabled={!autotune || mode === 'chromatic'}
-        onChange={(e) => {
-          const r = e.target.value as NoteName
-          setRoot(r)
-          engine.current.setAutotuneScale(r, mode)
-        }}
-      >
-        {NOTE_ORDER.map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-      </select>
-      <label>
-        Strength
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={strength}
+      <div className="bar-group">
+        <button className={`btn ${micOn ? 'btn-active' : ''}`} onClick={toggleMic}>
+          {micOn ? 'Mic Off' : 'Mic On'}
+        </button>
+        <select className="select" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
+          <option value="">Default mic</option>
+          {devices.map((d) => (
+            <option key={d.deviceId} value={d.deviceId}>
+              {d.label || 'Microphone'}
+            </option>
+          ))}
+        </select>
+        <label className="control">
+          Gain
+          <input
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value={gain}
+            onChange={(e) => {
+              setGain(+e.target.value)
+              engine.current.setMicGain(+e.target.value)
+            }}
+          />
+        </label>
+      </div>
+      <div className="bar-divider" />
+      <div className="bar-group">
+        <label className="control">
+          Reverb
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={reverb}
+            onChange={(e) => {
+              setReverb(+e.target.value)
+              engine.current.setReverbMix(+e.target.value)
+            }}
+          />
+        </label>
+      </div>
+      <div className="bar-divider" />
+      <div className="bar-group">
+        <button
+          className={`btn ${autotune ? 'btn-active' : ''}`}
+          onClick={toggleAutotune}
+          disabled={!micOn || autotuneError}
+          title={autotuneError ? 'Autotune failed to load' : ''}
+        >
+          {autotune ? 'Autotune On' : 'Autotune Off'}
+        </button>
+        <select
+          className="select"
+          value={mode}
           disabled={!autotune}
           onChange={(e) => {
-            setStrength(+e.target.value)
-            engine.current.setAutotuneStrength(+e.target.value)
+            const m = e.target.value as Mode
+            setMode(m)
+            engine.current.setAutotuneScale(root, m)
           }}
-        />
-      </label>
+        >
+          <option value="chromatic">Chromatic</option>
+          <option value="major">Major</option>
+          <option value="minor">Minor</option>
+        </select>
+        <select
+          className="select"
+          value={root}
+          disabled={!autotune || mode === 'chromatic'}
+          onChange={(e) => {
+            const r = e.target.value as NoteName
+            setRoot(r)
+            engine.current.setAutotuneScale(r, mode)
+          }}
+        >
+          {NOTE_ORDER.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <label className="control">
+          Strength
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={strength}
+            disabled={!autotune}
+            onChange={(e) => {
+              setStrength(+e.target.value)
+              engine.current.setAutotuneStrength(+e.target.value)
+            }}
+          />
+        </label>
+      </div>
       {micOn && <span className="warn">🎧 Use headphones — speakers will feed back</span>}
       {micError && <span className="error">{micError}</span>}
     </div>

@@ -7,6 +7,16 @@ body {
   background: #111;
   color: #eee;
 }
+
+:root {
+  --accent: #ff5c7a;
+  --bar-bg: #16181d;
+  --bar-border: #2a2d35;
+  --control-bg: #1d2027;
+  --control-border: #33363f;
+  --text-muted: #8a8f9c;
+}
+
 .bar {
   position: fixed;
   bottom: 0;
@@ -17,18 +27,112 @@ body {
   align-items: center;
   gap: 12px;
   padding: 0 16px;
-  background: #111;
+  background: var(--bar-bg);
+  border-top: 1px solid var(--bar-border);
 }
-.bar label {
+
+.bar-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 20px 0;
+  background: var(--bar-border);
+}
+
+.bar label,
+.control {
   display: flex;
   flex-direction: column;
+  gap: 4px;
   font-size: 11px;
-  gap: 2px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
-.warn {
-  color: #fc0;
+
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: #eee;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #16181d;
+}
+
+.btn-active:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn-nav {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid var(--control-border);
+  background: var(--control-bg);
+  color: var(--text-muted);
+}
+
+.btn-nav:hover {
+  color: #eee;
+  border-color: var(--control-border);
+}
+
+.select {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--control-border);
+  background: var(--control-bg);
+  color: #eee;
   font-size: 12px;
 }
+
+.select:disabled {
+  opacity: 0.4;
+}
+
+.control input[type='range'] {
+  width: 100px;
+  accent-color: var(--accent);
+}
+
+.control input[type='range']:disabled {
+  opacity: 0.4;
+}
+
+.warn {
+  color: #e0a030;
+  font-size: 12px;
+}
+
 .error {
   color: #f66;
   font-size: 12px;
