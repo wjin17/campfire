@@ -1,7 +1,9 @@
 import { app, BrowserWindow, WebContentsView, session, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { toChromeUA } from './ua'
+import { YOUTUBE_UA } from './ua'
+
+app.commandLine.appendSwitch('disable-features', 'UserAgentClientHint')
 
 const CONTROL_BAR_HEIGHT = 96
 
@@ -25,7 +27,7 @@ function createWindow(): void {
   })
 
   const ytSession = session.fromPartition('persist:youtube')
-  ytSession.setUserAgent(toChromeUA(ytSession.getUserAgent()))
+  ytSession.setUserAgent(YOUTUBE_UA)
 
   const yt = new WebContentsView({
     webPreferences: { partition: 'persist:youtube' }
