@@ -1,37 +1,59 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, WebContentsView, session, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import { toChromeUA } from './ua'
+
+const CONTROL_BAR_HEIGHT = 96
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  const win = new BrowserWindow({
+    width: 1280,
+    height: 800,
     show: false,
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
+    cb(permission === 'media')
+  })
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    return permission === 'media'
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  const ytSession = session.fromPartition('persist:youtube')
+  ytSession.setUserAgent(toChromeUA(ytSession.getUserAgent()))
+
+  const yt = new WebContentsView({
+    webPreferences: { partition: 'persist:youtube' }
+  })
+  win.contentView.addChildView(yt)
+
+  const layout = (): void => {
+    const { width, height } = win.getContentBounds()
+    yt.setBounds({ x: 0, y: 0, width, height: Math.max(0, height - CONTROL_BAR_HEIGHT) })
+  }
+  win.on('resize', layout)
+  layout()
+
+  yt.webContents.setWindowOpenHandler(({ url }) => {
+    yt.webContents.loadURL(url)
+    return { action: 'deny' }
+  })
+  yt.webContents.loadURL('https://www.youtube.com')
+
+  win.on('ready-to-show', () => win.show())
+  win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
 
