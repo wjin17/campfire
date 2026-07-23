@@ -46,8 +46,8 @@ Electron, single `BrowserWindow`:
 
 ```
 getUserMedia (echoCancellation: false, noiseSuppression: false, autoGainControl: false)
+  → autotalent AudioWorkletNode (WASM) — disconnected when toggled off
   → GainNode (mic gain)
-  → autotalent AudioWorkletNode (WASM) — bypassed when toggled off
   → split: dry ───────────────────────────────┐
            wet → ConvolverNode (large-hall IR) ┤ wet/dry mix (2 gains)
   → DynamicsCompressorNode (gentle, glue)
