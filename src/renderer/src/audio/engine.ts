@@ -86,9 +86,16 @@ export class AudioEngine {
     this.chain.wetGain.gain.value = wet
   }
 
+  private autotuneLoading = false
+
   async enableAutotune(): Promise<void> {
-    if (!this.ctx || !this.chain || this.autotune) return
-    this.autotune = await createAutotuneNode(this.ctx)
+    if (!this.ctx || !this.chain || this.autotune || this.autotuneLoading) return
+    this.autotuneLoading = true
+    try {
+      this.autotune = await createAutotuneNode(this.ctx)
+    } finally {
+      this.autotuneLoading = false
+    }
     this.chain.source.disconnect(this.chain.micGain)
     this.chain.source.connect(this.autotune.node)
     this.autotune.node.connect(this.chain.micGain)
