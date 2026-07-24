@@ -18,6 +18,21 @@ export default function Visualizer({ engineRef, active }: VisualizerProps): Reac
     const ctx2d = canvas.getContext('2d')
     if (!ctx2d) return
 
+    let width = canvas.clientWidth
+    let height = canvas.clientHeight
+
+    const resize = (): void => {
+      const dpr = window.devicePixelRatio || 1
+      width = canvas.clientWidth
+      height = canvas.clientHeight
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    resize()
+    const observer = new ResizeObserver(resize)
+    observer.observe(canvas)
+
     let raf = 0
     let lastFrame = 0
     const data = new Uint8Array(128)
@@ -26,11 +41,6 @@ export default function Visualizer({ engineRef, active }: VisualizerProps): Reac
       raf = requestAnimationFrame(draw)
       if (t - lastFrame < FRAME_INTERVAL_MS) return
       lastFrame = t
-
-      const width = canvas.clientWidth
-      const height = canvas.clientHeight
-      if (canvas.width !== width) canvas.width = width
-      if (canvas.height !== height) canvas.height = height
 
       ctx2d.clearRect(0, 0, width, height)
 
@@ -47,7 +57,10 @@ export default function Visualizer({ engineRef, active }: VisualizerProps): Reac
       }
     }
     raf = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+    }
   }, [engineRef, active])
 
   return <canvas ref={canvasRef} className="visualizer" />

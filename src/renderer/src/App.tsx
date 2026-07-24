@@ -151,6 +151,9 @@ export default function App(): React.JSX.Element {
     await window.api.setExpanded(next)
   }
 
+  const hasWindowControls =
+    typeof window.api.windowMinimize === 'function' && typeof window.api.windowClose === 'function'
+
   return (
     <div className={`widget ${hydrated ? '' : 'pre-hydrate'}`}>
       <div className="header">
@@ -169,13 +172,32 @@ export default function App(): React.JSX.Element {
         >
           <span className={`chevron ${expanded ? 'chevron-up' : 'chevron-down'}`} />
         </button>
-        <button
-          className="icon-btn no-drag"
-          onClick={() => window.api.minimizeToTray()}
-          title="Minimize to tray"
-        >
-          &minus;
-        </button>
+        {hasWindowControls ? (
+          <>
+            <button
+              className="icon-btn no-drag"
+              onClick={() => window.api.windowMinimize?.()}
+              title="Minimize"
+            >
+              <span className="icon-minimize" />
+            </button>
+            <button
+              className="icon-btn icon-btn-close no-drag"
+              onClick={() => window.api.windowClose?.()}
+              title="Close"
+            >
+              <span className="icon-close" />
+            </button>
+          </>
+        ) : (
+          <button
+            className="icon-btn no-drag"
+            onClick={() => window.api.minimizeToTray()}
+            title="Minimize to tray"
+          >
+            &minus;
+          </button>
+        )}
       </div>
 
       {expanded && (

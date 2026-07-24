@@ -30,6 +30,12 @@ const api = {
   minimizeToTray: (): void => {
     ipcRenderer.send('minimize-to-tray')
   },
+  windowMinimize: (): void => {
+    ipcRenderer.send('window-minimize')
+  },
+  windowClose: (): void => {
+    ipcRenderer.send('window-close')
+  },
   setMicActive: (active: boolean): void => {
     ipcRenderer.send('set-mic-active', active)
   },

@@ -16,6 +16,8 @@ interface CampfireApi {
   onNowPlaying: (cb: (msg: NowPlaying) => void) => () => void
   setExpanded: (expanded: boolean) => Promise<void>
   minimizeToTray: () => void
+  windowMinimize?: () => void
+  windowClose?: () => void
   setMicActive: (active: boolean) => void
   onTrayMicToggle: (cb: () => void) => () => void
   getSettings: () => Promise<Settings>

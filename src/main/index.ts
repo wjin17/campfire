@@ -151,6 +151,12 @@ app.whenReady().then(async () => {
   ipcMain.on('minimize-to-tray', () => {
     mainWindow?.hide()
   })
+  ipcMain.on('window-minimize', () => {
+    mainWindow?.minimize()
+  })
+  ipcMain.on('window-close', () => {
+    mainWindow?.close()
+  })
   ipcMain.on('set-mic-active', (_e, active: boolean) => {
     if (mainWindow) setTrayMicActive(mainWindow, active)
   })
