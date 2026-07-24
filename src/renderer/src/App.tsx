@@ -5,6 +5,7 @@ import Visualizer from './components/Visualizer'
 import Tuner from './components/Tuner'
 import Lyrics from './components/Lyrics'
 import MicLevel from './components/MicLevel'
+import FlameMark from './components/FlameMark'
 
 type SettingsPartial = Parameters<typeof window.api.saveSettings>[0]
 const SETTINGS_DEBOUNCE_MS = 300
@@ -159,7 +160,8 @@ export default function App(): React.JSX.Element {
     <div className={`widget ${hydrated ? '' : 'pre-hydrate'}`}>
       <Lyrics leadMs={lyricsLeadMs} mode={expanded ? 'panel' : 'line'} />
 
-      <div className="header">
+      <div className="controls-row">
+        <FlameMark className="brand-flame" />
         <button
           className={`mic-pill no-drag ${micOn ? 'btn-active' : ''}`}
           onClick={toggleMic}
@@ -168,7 +170,7 @@ export default function App(): React.JSX.Element {
         >
           {micOn ? 'Mic On' : 'Mic Off'}
         </button>
-        <Visualizer engineRef={engine} active={micOn} />
+        <div className="controls-spacer" />
         <button
           className="icon-btn no-drag"
           onClick={toggleExpanded}
@@ -352,6 +354,10 @@ export default function App(): React.JSX.Element {
 
       {micOn && <span className="warn">🎧 Use headphones — speakers will feed back</span>}
       {micError && <span className="error">{micError}</span>}
+
+      <div className={`visualizer-wrap ${expanded ? '' : 'visualizer-wrap-grow'}`}>
+        <Visualizer engineRef={engine} active={micOn} />
+      </div>
     </div>
   )
 }

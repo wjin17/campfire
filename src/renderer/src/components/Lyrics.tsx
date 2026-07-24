@@ -19,7 +19,6 @@ export default function Lyrics({ leadMs, mode }: LyricsProps): React.JSX.Element
   const leadMsRef = useRef(leadMs)
   const [lines, setLines] = useState<LrcLine[]>([])
   const [status, setStatus] = useState<Status>('nothing')
-  const [trackTitle, setTrackTitle] = useState('')
   const [lineIndex, setLineIndex] = useState(-1)
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function Lyrics({ leadMs, mode }: LyricsProps): React.JSX.Element
       const track = clockRef.current.activeTrack()
       if (!track || track.key === trackKeyRef.current) return
       trackKeyRef.current = track.key
-      setTrackTitle(track.title)
       setStatus('loading')
       setLines([])
       setLineIndex(-1)
@@ -69,22 +67,19 @@ export default function Lyrics({ leadMs, mode }: LyricsProps): React.JSX.Element
   }, [lines])
 
   const panelClass = mode === 'panel' ? 'lyrics-panel' : ''
+  // Only ever shows real synced lines — no "Nothing playing"/"no synced
+  // lyrics" placeholder text. When there's nothing to show, the wrapper
+  // stays mounted but collapses to zero height (see .lyrics-hidden) so the
+  // space it occupied animates away instead of popping.
+  const visible = status === 'ready'
 
-  if (status === 'nothing') {
-    return <div className={`lyrics lyrics-empty ${panelClass}`}>Nothing playing</div>
-  }
-  if (status === 'no-sync') {
-    return (
-      <div className={`lyrics lyrics-empty ${panelClass}`}>No synced lyrics — {trackTitle}</div>
-    )
-  }
-
-  const prev = lineIndex > 0 ? lines[lineIndex - 1].text : ''
-  const current = lineIndex >= 0 ? lines[lineIndex].text : ''
-  const next = lineIndex >= 0 && lineIndex + 1 < lines.length ? lines[lineIndex + 1].text : ''
+  const prev = visible && lineIndex > 0 ? lines[lineIndex - 1].text : ''
+  const current = visible && lineIndex >= 0 ? lines[lineIndex].text : ''
+  const next =
+    visible && lineIndex >= 0 && lineIndex + 1 < lines.length ? lines[lineIndex + 1].text : ''
 
   return (
-    <div className={`lyrics lyrics-lines ${panelClass}`}>
+    <div className={`lyrics ${panelClass} ${visible ? '' : 'lyrics-hidden'}`}>
       <div className="lyrics-line lyrics-prev">{prev}</div>
       <div className="lyrics-line lyrics-current" key={lineIndex}>
         {current}
