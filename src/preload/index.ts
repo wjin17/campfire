@@ -17,7 +17,8 @@ interface NowPlaying {
 
 const api = {
   wasmBytes: (): ArrayBuffer => {
-    const buf = readFileSync(join(__dirname, '../renderer/worklet/autotalent.wasm'))
+    const payloadDir = process.env['CAMPFIRE_PAYLOAD_DIR'] ?? join(__dirname, '../renderer')
+    const buf = readFileSync(join(payloadDir, 'worklet/autotalent.wasm'))
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
   },
   onNowPlaying: (cb: (msg: NowPlaying) => void): (() => void) => {

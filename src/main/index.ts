@@ -5,6 +5,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { loadSettings, saveSettings } from './settings'
 import { startNowPlayingServer, parseNowPlaying } from './nowplaying-server'
 import { createTray, setTrayMicActive } from './tray'
+import { resolveActivePayload, checkForPayloadUpdate } from './payload'
 
 const SMALL_SIZE = { width: 320, height: 96 }
 const EXPANDED_SIZE = { width: 400, height: 560 }
@@ -15,10 +16,23 @@ const SMTC_MAX_RESPAWNS = 3
 let mainWindow: BrowserWindow | null = null
 let smtcProcess: ChildProcessWithoutNullStreams | null = null
 let smtcRespawnCount = 0
+let activePayloadVersion = app.getVersion()
+
+function isDevRenderer(): boolean {
+  return Boolean(is.dev && process.env['ELECTRON_RENDERER_URL'])
+}
 
 function createWindow(): BrowserWindow {
   const settings = loadSettings()
   const size = settings.expanded ? EXPANDED_SIZE : SMALL_SIZE
+
+  const bundledDir = join(__dirname, '../renderer')
+  if (!isDevRenderer()) {
+    const active = resolveActivePayload(app.getPath('userData'), bundledDir, app.getVersion())
+    process.env['CAMPFIRE_PAYLOAD_DIR'] = active.dir
+    activePayloadVersion = active.version
+  }
+
   const win = new BrowserWindow({
     ...size,
     x: settings.x,
@@ -56,10 +70,10 @@ function createWindow(): BrowserWindow {
     if (mainWindow === win) mainWindow = null
   })
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (isDevRenderer()) {
+    win.loadURL(process.env['ELECTRON_RENDERER_URL']!)
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(join(process.env['CAMPFIRE_PAYLOAD_DIR']!, 'index.html'))
   }
 
   return win
@@ -123,6 +137,7 @@ app.whenReady().then(async () => {
   mainWindow = createWindow()
   createTray(mainWindow)
   spawnSmtcHelper(mainWindow)
+  if (!isDevRenderer()) void checkForPayloadUpdate(app.getPath('userData'))
 
   const { port } = await startNowPlayingServer(mainWindow, WS_PORT_PRIMARY, WS_PORT_FALLBACK)
   saveSettings({ wsPort: port })
@@ -132,7 +147,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('set-expanded', (_e, expanded: boolean) => {
     if (mainWindow) setExpanded(mainWindow, expanded)
   })
-  ipcMain.handle('payload-version', () => app.getVersion())
+  ipcMain.handle('payload-version', () => activePayloadVersion)
   ipcMain.on('minimize-to-tray', () => {
     mainWindow?.hide()
   })
