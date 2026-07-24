@@ -1,5 +1,8 @@
 appId: com.wjin17.campfire
 productName: Campfire
+compression: maximum
+electronLanguages:
+  - en-US
 directories:
   buildResources: build
 files:
