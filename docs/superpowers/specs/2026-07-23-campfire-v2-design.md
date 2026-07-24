@@ -78,7 +78,7 @@ session, Firefox UA, back button, yt-back IPC) is deleted.
 **Payload** (auto-updates; everything under `src/renderer`):
 - Widget UI (React), both states, styling.
 - Audio engine unchanged from v1 (mic constraints EC/NS/AGC false,
-  latencyHint 'interactive', reverb chain, autotalent worklet + wasm).
+  latencyHint 0, reverb chain, autotalent worklet + wasm).
 - Visualizer: AnalyserNode → canvas bar meter, ~30 fps, idle-flat when mic off.
 - Lyrics stack (below).
 - Now-playing arbitration: extension messages take priority over SMTC; a

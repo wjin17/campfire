@@ -82,7 +82,7 @@ export class AudioEngine {
         autoGainControl: false
       }
     })
-    this.ctx = new AudioContext({ latencyHint: 'interactive' })
+    this.ctx = new AudioContext({ latencyHint: 0 })
     const source = this.ctx.createMediaStreamSource(this.micStream)
     this.chain = buildChain(this.ctx, source)
     try {
