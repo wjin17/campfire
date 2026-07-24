@@ -75,6 +75,7 @@ function setExpanded(win: BrowserWindow, expanded: boolean): void {
 function spawnSmtcHelper(win: BrowserWindow): void {
   if (process.platform !== 'win32') return
 
+  const spawnedAt = Date.now()
   const scriptPath = join(__dirname, '../../resources/smtc-poll.ps1')
   const child = spawn('powershell.exe', [
     '-NoProfile',
@@ -100,6 +101,7 @@ function spawnSmtcHelper(win: BrowserWindow): void {
 
   child.on('exit', () => {
     smtcProcess = null
+    if (Date.now() - spawnedAt > 60_000) smtcRespawnCount = 0
     if (smtcRespawnCount < SMTC_MAX_RESPAWNS) {
       smtcRespawnCount++
       setTimeout(() => spawnSmtcHelper(win), 1000 * smtcRespawnCount)
