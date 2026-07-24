@@ -37,6 +37,7 @@ function createWindow(): BrowserWindow {
     ...size,
     x: settings.x,
     y: settings.y,
+    icon: join(__dirname, '../../resources/icon.png'),
     frame: false,
     alwaysOnTop: true,
     resizable: false,
