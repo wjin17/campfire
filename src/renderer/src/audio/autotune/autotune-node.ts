@@ -24,7 +24,12 @@ export async function createAutotuneNode(ctx: BaseAudioContext): Promise<Autotun
     numberOfInputs: 1,
     numberOfOutputs: 1,
     outputChannelCount: [1],
-    processorOptions: { wasmBytes: bytes, controls: defaultControls(portMap) }
+    processorOptions: {
+      wasmBytes: bytes,
+      controls: defaultControls(portMap),
+      pitchPort: portMap.detectedPitch,
+      confidencePort: portMap.confidence
+    }
   })
   return {
     node,

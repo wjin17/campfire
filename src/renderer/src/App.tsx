@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AudioEngine } from './audio/engine'
 import { NOTE_ORDER, type NoteName, type Mode } from './audio/autotune/scale'
 import Visualizer from './components/Visualizer'
+import Tuner from './components/Tuner'
 
 type SettingsPartial = Parameters<typeof window.api.saveSettings>[0]
 const SETTINGS_DEBOUNCE_MS = 300
@@ -101,6 +102,7 @@ export default function App(): React.JSX.Element {
           await engine.current.start()
           engine.current.setMicGain(gainRef.current)
           engine.current.setReverbMix(reverbRef.current)
+          setAutotuneError(!engine.current.autotuneAvailable)
         } catch {
           setMicOn(false)
           setMicError('Mic access denied — allow it and retry')
@@ -125,6 +127,7 @@ export default function App(): React.JSX.Element {
       engine.current.setMicGain(gainRef.current)
       engine.current.setReverbMix(reverbRef.current)
       setMicOn(true)
+      setAutotuneError(!engine.current.autotuneAvailable)
       refreshDevices()
     } catch {
       setMicError('Mic access denied — allow it and retry')
@@ -134,22 +137,11 @@ export default function App(): React.JSX.Element {
     toggleMicRef.current = toggleMic
   })
 
-  const toggleAutotune = async (): Promise<void> => {
-    if (autotune) {
-      engine.current.disableAutotune()
-      setAutotune(false)
-      window.api.saveSettings({ autotune: { enabled: false, root, mode, strength } })
-      return
-    }
-    try {
-      await engine.current.enableAutotune()
-      engine.current.setAutotuneStrength(strength)
-      engine.current.setAutotuneScale(root, mode)
-      setAutotune(true)
-      window.api.saveSettings({ autotune: { enabled: true, root, mode, strength } })
-    } catch {
-      setAutotuneError(true)
-    }
+  const toggleAutotune = (): void => {
+    const next = !autotune
+    setAutotune(next)
+    engine.current.setAutotuneEnabled(next, strength)
+    window.api.saveSettings({ autotune: { enabled: next, root, mode, strength } })
   }
 
   const toggleExpanded = async (): Promise<void> => {
@@ -320,7 +312,7 @@ export default function App(): React.JSX.Element {
             />
           </label>
 
-          <div className="tuner" />
+          <Tuner engineRef={engine} active={micOn} />
         </div>
       )}
 

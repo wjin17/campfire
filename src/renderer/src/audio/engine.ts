@@ -54,6 +54,7 @@ export class AudioEngine {
   private autotune: AutotuneHandle | null = null
   private root: NoteName = 'C'
   private mode: Mode = 'chromatic'
+  private pitchCb: ((p: { semitones: number; confidence: number }) => void) | null = null
   micStream: MediaStream | null = null
 
   async start(deviceId?: string): Promise<void> {
@@ -69,6 +70,17 @@ export class AudioEngine {
     this.ctx = new AudioContext({ latencyHint: 'interactive' })
     const source = this.ctx.createMediaStreamSource(this.micStream)
     this.chain = buildChain(this.ctx, source)
+    try {
+      this.autotune = await createAutotuneNode(this.ctx)
+      this.chain.source.connect(this.autotune.node)
+      this.autotune.node.connect(this.chain.micGain)
+      this.applyScale()
+      this.setAutotuneEnabled(false)
+      this.wirePitch()
+    } catch {
+      this.autotune = null
+      this.chain.source.connect(this.chain.micGain)
+    }
   }
 
   stop(): void {
@@ -79,6 +91,10 @@ export class AudioEngine {
     this.chain = null
     this.micStream = null
     this.autotune = null
+  }
+
+  get autotuneAvailable(): boolean {
+    return this.autotune !== null
   }
 
   setMicGain(v: number): void {
@@ -96,39 +112,31 @@ export class AudioEngine {
     return this.chain?.analyser ?? null
   }
 
-  private autotuneLoading = false
-
-  async enableAutotune(): Promise<void> {
-    if (!this.ctx || !this.chain || this.autotune || this.autotuneLoading) return
-    this.autotuneLoading = true
-    let handle: AutotuneHandle
-    try {
-      handle = await createAutotuneNode(this.ctx)
-    } finally {
-      this.autotuneLoading = false
-    }
-    if (!this.ctx || !this.chain) {
-      handle.node.port.close()
-      return
-    }
-    this.autotune = handle
-    this.chain.source.disconnect(this.chain.micGain)
-    this.chain.source.connect(this.autotune.node)
-    this.autotune.node.connect(this.chain.micGain)
-    this.applyScale()
-  }
-
-  disableAutotune(): void {
-    if (!this.chain || !this.autotune) return
-    this.chain.source.disconnect(this.autotune.node)
-    this.autotune.node.disconnect()
-    this.autotune.node.port.close()
-    this.chain.source.connect(this.chain.micGain)
-    this.autotune = null
+  setAutotuneEnabled(enabled: boolean, strength = 1): void {
+    if (!this.autotune) return
+    this.autotune.setControl(this.autotune.portMap.amount, enabled ? strength : 0)
+    this.autotune.setControl(this.autotune.portMap.mix, enabled ? 1 : 0)
   }
 
   setAutotuneStrength(v: number): void {
     this.autotune?.setControl(this.autotune.portMap.amount, v)
+  }
+
+  onPitch(cb: ((p: { semitones: number; confidence: number }) => void) | null): void {
+    this.pitchCb = cb
+    this.wirePitch()
+  }
+
+  private wirePitch(): void {
+    if (!this.autotune) return
+    const cb = this.pitchCb
+    this.autotune.node.port.onmessage = cb
+      ? (e: MessageEvent): void => {
+          if (e.data.type === 'pitch') {
+            cb({ semitones: e.data.semitones, confidence: e.data.confidence })
+          }
+        }
+      : null
   }
 
   setAutotuneScale(root: NoteName, mode: Mode): void {

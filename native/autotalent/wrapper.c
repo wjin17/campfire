@@ -46,6 +46,7 @@ int at_port_is_control_input(unsigned long p) {
 float at_port_lower(unsigned long p) { return desc->PortRangeHints[p].LowerBound; }
 float at_port_upper(unsigned long p) { return desc->PortRangeHints[p].UpperBound; }
 void at_set_control(unsigned long p, float v) { controls[p] = v; }
+float at_get_control(unsigned long p) { return controls[p]; }
 float *at_in_ptr(void) { return inbuf; }
 float *at_out_ptr(void) { return outbuf; }
 void at_process(unsigned long n) { desc->run(inst, n > block_cap ? block_cap : n); }

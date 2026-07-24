@@ -1,11 +1,15 @@
 const stub = () => new Proxy({}, { get: () => () => 0 })
+const PITCH_POST_EVERY_BLOCKS = 10
 
 class AutotalentProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super()
     this.ready = false
     this.failed = false
-    const { wasmBytes, controls } = options.processorOptions
+    this.blockCount = 0
+    const { wasmBytes, controls, pitchPort, confidencePort } = options.processorOptions
+    this.pitchPort = pitchPort
+    this.confidencePort = confidencePort
     this.port.onmessage = (e) => {
       if (e.data.type !== 'set') return
       if (this.ready) this.wasm.at_set_control(e.data.port, e.data.value)
@@ -41,6 +45,16 @@ class AutotalentProcessor extends AudioWorkletProcessor {
     this.wasm.at_process(input.length)
     const result = heap.subarray(this.outIdx, this.outIdx + input.length)
     for (const o of outs) o.set(result)
+
+    this.blockCount++
+    if (this.blockCount >= PITCH_POST_EVERY_BLOCKS) {
+      this.blockCount = 0
+      this.port.postMessage({
+        type: 'pitch',
+        semitones: this.wasm.at_get_control(this.pitchPort),
+        confidence: this.wasm.at_get_control(this.confidencePort)
+      })
+    }
     return true
   }
 }

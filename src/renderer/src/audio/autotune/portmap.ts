@@ -4,6 +4,8 @@ export interface PortMap {
   amount: number
   smooth: number
   mix: number
+  detectedPitch: number
+  confidence: number
 }
 
 interface AutotalentExports {
@@ -40,9 +42,14 @@ export async function buildPortMap(bytes: ArrayBuffer): Promise<PortMap> {
   let amount = -1
   let smooth = -1
   let mix = -1
+  let detectedPitch = -1
+  let confidence = -1
 
   for (let p = 0; p < n; p++) {
     if (!w.at_port_is_control_input(p)) {
+      const nm = name(w.at_port_name(p))
+      if (nm.includes('detected pitch')) detectedPitch = p
+      else if (nm.includes('confidence')) confidence = p
       if (notes.length > 0 && notes.length < 12) notes.length = 0
       continue
     }
@@ -60,10 +67,18 @@ export async function buildPortMap(bytes: ArrayBuffer): Promise<PortMap> {
     else if (nm.includes('mix')) mix = p
   }
 
-  if (notes.length !== 12 || concertA < 0 || amount < 0 || smooth < 0 || mix < 0) {
+  if (
+    notes.length !== 12 ||
+    concertA < 0 ||
+    amount < 0 ||
+    smooth < 0 ||
+    mix < 0 ||
+    detectedPitch < 0 ||
+    confidence < 0
+  ) {
     throw new Error('autotalent port map incomplete — compare with scripts/dump-ports.mjs output')
   }
-  return { notes, concertA, amount, smooth, mix }
+  return { notes, concertA, amount, smooth, mix, detectedPitch, confidence }
 }
 
 export function defaultControls(map: PortMap): Array<[number, number]> {

@@ -11,6 +11,8 @@ interface AutotalentExports {
   at_in_ptr: () => number
   at_out_ptr: () => number
   at_process: (n: number) => void
+  at_set_control: (p: number, v: number) => void
+  at_get_control: (p: number) => number
 }
 
 let w: AutotalentExports
@@ -52,5 +54,19 @@ describe('autotalent wasm', () => {
     for (let i = 0; i < 128; i++) f32[inIdx + i] = Math.sin((2 * Math.PI * 440 * i) / 44100)
     w.at_process(128)
     expect(Number.isFinite(new Float32Array(w.memory.buffer)[w.at_out_ptr() >> 2])).toBe(true)
+  })
+
+  it('exposes the detected pitch and confidence output ports via at_get_control', () => {
+    w.at_set_control(0, 440) // concert A, required for pitch-to-semitone conversion
+    const f32 = new Float32Array(w.memory.buffer)
+    const inIdx = w.at_in_ptr() >> 2
+    for (let block = 0; block < 40; block++) {
+      for (let i = 0; i < 128; i++) {
+        f32[inIdx + i] = Math.sin((2 * Math.PI * 449 * (block * 128 + i)) / 44100)
+      }
+      w.at_process(128)
+    }
+    expect(w.at_get_control(28)).toBeGreaterThan(0.9)
+    expect(Math.abs(w.at_get_control(27) - 0.351)).toBeLessThan(0.1)
   })
 })
