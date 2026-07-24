@@ -2,7 +2,7 @@ import { createWriteStream, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import archiver from 'archiver'
 
-export function zipDir(srcDir, destZipPath) {
+export function zipDir(srcDir, destZipPath, extraDirs = []) {
   mkdirSync(dirname(destZipPath), { recursive: true })
   return new Promise((resolve, reject) => {
     const output = createWriteStream(destZipPath)
@@ -11,6 +11,7 @@ export function zipDir(srcDir, destZipPath) {
     archive.on('error', reject)
     archive.pipe(output)
     archive.directory(srcDir, false)
+    for (const { src, dest } of extraDirs) archive.directory(src, dest)
     archive.finalize()
   })
 }

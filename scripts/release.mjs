@@ -1,5 +1,5 @@
 import { execSync, spawn } from 'node:child_process'
-import { readFileSync, readdirSync, renameSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { zipDir } from './zip-dir.mjs'
@@ -91,9 +91,16 @@ function findWinUnpackedDir() {
   return entries[0]
 }
 
-function listZips() {
-  return new Set(readdirSync('dist').filter((f) => f.endsWith('.zip')))
+function findMacUnpackedDir() {
+  const entries = readdirSync('dist', { withFileTypes: true })
+    .filter((e) => e.isDirectory() && /^mac/.test(e.name))
+    .map((e) => join('dist', e.name))
+  if (entries.length === 0) throw new Error('no mac-unpacked directory found under dist/')
+  entries.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+  return entries[0]
 }
+
+const EXTENSION_EXTRA = [{ src: 'extension', dest: 'extension' }]
 
 async function main() {
   const args = process.argv.slice(2)
@@ -117,18 +124,17 @@ async function main() {
     })
     const winDir = findWinUnpackedDir()
     const winZip = join('dist', 'Campfire-windows.zip')
-    await zipDir(winDir, winZip)
+    await zipDir(winDir, winZip, EXTENSION_EXTRA)
     assets.push(winZip)
 
-    const beforeZips = listZips()
-    execSync('npx electron-builder --mac zip --arm64 --config.mac.identity=null', {
+    // `dir` (not `zip`) so we control the zip contents ourselves and can add
+    // extension/ alongside Campfire.app, same as the Windows zip above.
+    execSync('npx electron-builder --mac dir --arm64 --config.mac.identity=null', {
       stdio: 'inherit'
     })
-    const afterZips = listZips()
-    const newZip = [...afterZips].find((f) => !beforeZips.has(f))
-    if (!newZip) throw new Error('mac build did not produce a new zip artifact under dist/')
+    const macDir = findMacUnpackedDir()
     const macZip = join('dist', 'Campfire-mac-arm64.zip')
-    renameSync(join('dist', newZip), macZip)
+    await zipDir(macDir, macZip, EXTENSION_EXTRA)
     assets.push(macZip)
   }
 
