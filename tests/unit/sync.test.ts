@@ -71,6 +71,36 @@ describe('LyricsClock', () => {
   })
 })
 
+describe('LyricsClock.activeTrack', () => {
+  it('keeps the track key on the extension while extension/smtc messages alternate', () => {
+    let t = 0
+    const clock = new LyricsClock(() => t)
+    for (let i = 0; i < 6; i++) {
+      t = i * 1000
+      clock.update(
+        msg({
+          source: i % 2 === 0 ? 'extension' : 'smtc',
+          title: i % 2 === 0 ? 'Extension Song - YouTube' : 'SMTC Raw Title - YouTube',
+          artist: i % 2 === 0 ? 'Artist' : 'Ignored',
+          ts: t
+        })
+      )
+      expect(clock.activeTrack()?.key).toBe('Extension Song|Artist')
+    }
+  })
+
+  it('switches the track key to smtc once the extension goes silent for 5s', () => {
+    let t = 0
+    const clock = new LyricsClock(() => t)
+    clock.update(msg({ source: 'extension', title: 'Extension Song', ts: 0 }))
+    clock.update(msg({ source: 'smtc', title: 'SMTC Song', ts: 0 }))
+    expect(clock.activeTrack()?.key).toBe('Extension Song|Artist')
+
+    t = 5001
+    expect(clock.activeTrack()?.key).toBe('SMTC Song|Artist')
+  })
+})
+
 describe('currentLineIndex', () => {
   const lines = [
     { t: 0, text: 'a' },

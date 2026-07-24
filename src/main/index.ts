@@ -7,7 +7,7 @@ import { startNowPlayingServer, parseNowPlaying } from './nowplaying-server'
 import { createTray, setTrayMicActive } from './tray'
 import { resolveActivePayload, checkForPayloadUpdate } from './payload'
 
-const SMALL_SIZE = { width: 320, height: 96 }
+const SMALL_SIZE = { width: 320, height: 128 }
 const EXPANDED_SIZE = { width: 400, height: 560 }
 const WS_PORT_PRIMARY = 17640
 const WS_PORT_FALLBACK = 17641

@@ -156,6 +156,8 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className={`widget ${hydrated ? '' : 'pre-hydrate'}`}>
+      <Lyrics leadMs={lyricsLeadMs} mode={expanded ? 'panel' : 'line'} />
+
       <div className="header">
         <button
           className={`mic-pill no-drag ${micOn ? 'btn-active' : ''}`}
@@ -318,11 +320,11 @@ export default function App(): React.JSX.Element {
                 }}
               />
             </label>
+
+            <Tuner engineRef={engine} active={micOn} />
           </div>
 
           <div className="divider" />
-
-          <Lyrics leadMs={lyricsLeadMs} />
 
           <label className="control">
             <span>
@@ -341,8 +343,6 @@ export default function App(): React.JSX.Element {
               }}
             />
           </label>
-
-          <Tuner engineRef={engine} active={micOn} />
         </div>
       )}
 

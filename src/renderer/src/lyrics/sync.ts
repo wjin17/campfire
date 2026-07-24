@@ -1,6 +1,16 @@
 import type { NowPlaying } from '../types/nowplaying'
+import { cleanTitle } from './clean'
 
 const EXTENSION_STALE_MS = 5000
+
+export interface ActiveTrack {
+  key: string
+  title: string
+  artist: string
+  duration: number
+}
+
+type Source = 'extension' | 'smtc'
 
 export class LyricsClock {
   private nowFn: () => number
@@ -16,11 +26,36 @@ export class LyricsClock {
     else this.smtc = msg
   }
 
-  active(): NowPlaying | null {
+  // Extension wins whenever its last message is still fresh, regardless of
+  // which source's message arrived most recently — this is what gives the
+  // hysteresis: a single stray smtc message can never flip activeness away
+  // from a fresh extension, only a full EXTENSION_STALE_MS silence can.
+  private activeSource(): Source | null {
     if (this.extension && this.nowFn() - this.extension.ts < EXTENSION_STALE_MS) {
-      return this.extension
+      return 'extension'
     }
-    return this.smtc
+    if (this.smtc) return 'smtc'
+    return null
+  }
+
+  active(): NowPlaying | null {
+    const source = this.activeSource()
+    if (source === 'extension') return this.extension
+    if (source === 'smtc') return this.smtc
+    return null
+  }
+
+  activeTrack(): ActiveTrack | null {
+    const msg = this.active()
+    if (!msg) return null
+    const { title, artist } = cleanTitle(msg.title)
+    const resolvedArtist = artist ?? msg.artist
+    return {
+      key: `${title}|${resolvedArtist}`,
+      title,
+      artist: resolvedArtist,
+      duration: msg.duration
+    }
   }
 
   now(leadMs: number): number {
