@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Campfire Now Playing",
+  "version": "1.0.0",
+  "description": "Sends the currently playing YouTube video's title and playback state to the Campfire desktop app over a local WebSocket.",
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
