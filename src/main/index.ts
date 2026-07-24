@@ -125,7 +125,7 @@ function spawnSmtcHelper(win: BrowserWindow): void {
 
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.wjin17.campfire')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
