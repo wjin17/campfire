@@ -29,7 +29,7 @@ export default defineConfig(
     }
   },
   {
-    files: ['src/renderer/public/worklet/**/*.js', '.superpowers/**/*.mjs'],
+    files: ['src/renderer/public/worklet/**/*.js', '.superpowers/**/*.mjs', 'scripts/**/*.mjs'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off'
     }

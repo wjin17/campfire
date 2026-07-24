@@ -20,7 +20,9 @@
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
     "test:unit": "vitest run",
-    "test:dsp": "playwright test"
+    "test:dsp": "playwright test",
+    "build:payload": "node scripts/build-payload.mjs",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

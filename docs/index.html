@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campfire — vocal effects &amp; synced lyrics</title>
+    <style>
+      :root {
+        --accent: #ff5c7a;
+        --bg: #0d0e12;
+        --bar-bg: #16181d;
+        --bar-border: #2a2d35;
+        --control-bg: #1d2027;
+        --control-border: #33363f;
+        --text: #eee;
+        --text-muted: #8a8f9c;
+      }
+
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+        padding: 0 20px 60px;
+      }
+
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      .hero {
+        text-align: center;
+        padding: 72px 0 40px;
+      }
+
+      .wordmark {
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .wordmark span {
+        color: var(--accent);
+      }
+
+      .tagline {
+        margin-top: 12px;
+        color: var(--text-muted);
+        font-size: 17px;
+      }
+
+      .downloads {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 32px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 22px;
+        border-radius: 22px;
+        border: 1px solid var(--control-border);
+        background: var(--control-bg);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+          border-color 0.15s ease,
+          background 0.15s ease;
+      }
+
+      .btn:hover {
+        border-color: var(--accent);
+        background: #22252e;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #16181d;
+      }
+
+      .btn-primary:hover {
+        background: #ff7590;
+        border-color: #ff7590;
+      }
+
+      .card {
+        background: var(--bar-bg);
+        border: 1px solid var(--bar-border);
+        border-radius: 12px;
+        padding: 20px 22px;
+        margin-top: 20px;
+      }
+
+      details summary {
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 15px;
+        list-style: none;
+      }
+
+      details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details summary::before {
+        content: '▸';
+        display: inline-block;
+        margin-right: 8px;
+        color: var(--accent);
+        transition: transform 0.12s ease;
+      }
+
+      details[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      details + details {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--bar-border);
+      }
+
+      .steps {
+        margin-top: 12px;
+        padding-left: 20px;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .steps li + li {
+        margin-top: 6px;
+      }
+
+      code,
+      pre {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+        font-size: 13px;
+      }
+
+      code {
+        background: var(--control-bg);
+        border: 1px solid var(--control-border);
+        border-radius: 4px;
+        padding: 1px 6px;
+      }
+
+      pre {
+        margin-top: 8px;
+        background: var(--control-bg);
+        border: 1px solid var(--control-border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        color: var(--text);
+      }
+
+      .note {
+        margin-top: 20px;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+
+      .note strong {
+        color: var(--text);
+      }
+
+      footer {
+        margin-top: 40px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .hero {
+          padding: 48px 0 28px;
+        }
+
+        .wordmark {
+          font-size: 32px;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="hero">
+        <div class="wordmark">Camp<span>fire</span></div>
+        <p class="tagline">Vocal effects and synced lyrics for whatever you're playing</p>
+        <div class="downloads">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/wjin17/campfire/releases/latest/download/Campfire-windows.zip"
+            >Download for Windows</a
+          >
+          <a
+            class="btn"
+            href="https://github.com/wjin17/campfire/releases/latest/download/Campfire-mac-arm64.zip"
+            >Download for Mac (Apple Silicon)</a
+          >
+        </div>
+      </div>
+
+      <div class="card">
+        <details open>
+          <summary>Install on Windows</summary>
+          <ol class="steps">
+            <li>Unzip the downloaded <code>Campfire-windows.zip</code>.</li>
+            <li>Open the extracted folder and run <code>Campfire.exe</code>.</li>
+          </ol>
+        </details>
+        <details>
+          <summary>Install on Mac (Apple Silicon only)</summary>
+          <ol class="steps">
+            <li>Unzip the downloaded <code>Campfire-mac-arm64.zip</code>.</li>
+            <li>
+              The build isn't notarized, so macOS will quarantine and refuse to open it. Clear the
+              quarantine flag and ad-hoc sign it from Terminal:
+            </li>
+          </ol>
+          <pre><code>xattr -cr Campfire.app
+codesign -s - Campfire.app</code></pre>
+          <ol class="steps" start="3">
+            <li>Then open <code>Campfire.app</code> as usual.</li>
+          </ol>
+        </details>
+      </div>
+
+      <p class="note">
+        <strong>Updates are silent.</strong> Campfire checks GitHub Releases in the background and
+        pulls down new versions automatically — you never have to reinstall.
+      </p>
+
+      <p class="note">
+        For accurate song detection in a browser, install the
+        <a
+          href="https://github.com/wjin17/campfire/tree/master/extension"
+          style="color: var(--accent)"
+          >Campfire browser extension</a
+        >
+        (load-unpacked instructions in its README).
+      </p>
+
+      <footer>
+        <a href="https://github.com/wjin17/campfire">github.com/wjin17/campfire</a>
+      </footer>
+    </main>
+  </body>
+</html>

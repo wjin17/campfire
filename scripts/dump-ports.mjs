@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises'
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const stub = () => new Proxy({}, { get: () => () => 0 })
 const bytes = await readFile('src/renderer/public/worklet/autotalent.wasm')
 const { instance } = await WebAssembly.instantiate(bytes, {
@@ -10,7 +9,6 @@ const { instance } = await WebAssembly.instantiate(bytes, {
 const w = instance.exports
 if (w.at_init(44100, 128) !== 0) throw new Error('at_init failed')
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const str = (ptr) => {
   const mem = new Uint8Array(w.memory.buffer)
   let end = ptr
