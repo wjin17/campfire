@@ -1,18 +1,15 @@
-import { app, BrowserWindow, WebContentsView, session, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, session, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { YOUTUBE_UA } from './ua'
-
-app.commandLine.appendSwitch('disable-features', 'UserAgentClientHint')
-
-const CONTROL_BAR_HEIGHT = 96
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 320,
+    height: 96,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
     show: false,
-    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -24,33 +21,6 @@ function createWindow(): void {
   })
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
     return permission === 'media'
-  })
-
-  const ytSession = session.fromPartition('persist:youtube')
-  ytSession.setUserAgent(YOUTUBE_UA)
-
-  const yt = new WebContentsView({
-    webPreferences: { partition: 'persist:youtube' }
-  })
-  win.contentView.addChildView(yt)
-
-  const layout = (): void => {
-    const { width, height } = win.getContentBounds()
-    yt.setBounds({ x: 0, y: 0, width, height: Math.max(0, height - CONTROL_BAR_HEIGHT) })
-  }
-  win.on('resize', layout)
-  layout()
-
-  yt.webContents.setWindowOpenHandler(({ url }) => {
-    yt.webContents.loadURL(url)
-    return { action: 'deny' }
-  })
-  yt.webContents.loadURL('https://www.youtube.com')
-
-  ipcMain.on('yt-back', () => {
-    if (yt.webContents.navigationHistory.canGoBack()) {
-      yt.webContents.navigationHistory.goBack()
-    }
   })
 
   win.on('ready-to-show', () => win.show())

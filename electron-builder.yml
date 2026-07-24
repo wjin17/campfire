@@ -1,5 +1,5 @@
-appId: com.dobby.karaoke
-productName: Karaoke
+appId: com.wjin17.campfire
+productName: Campfire
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: Karaoke
+  executableName: Campfire
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

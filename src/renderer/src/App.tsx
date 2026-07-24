@@ -96,9 +96,6 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="bar">
-      <button className="btn btn-nav" onClick={() => window.api.ytBack()}>
-        ← Back
-      </button>
       <div className="bar-group">
         <button className={`btn ${micOn ? 'btn-active' : ''}`} onClick={toggleMic}>
           {micOn ? 'Mic Off' : 'Mic On'}
