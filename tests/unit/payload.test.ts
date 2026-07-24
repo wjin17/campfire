@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { compareSemver, pickPayloadAssets, validateManifest } from '../../src/main/payload'
+import { SHELL_API_VERSION } from '../../src/main/shell-api'
 
 describe('compareSemver', () => {
   it('reports equal versions as 0', () => {
@@ -68,7 +69,9 @@ describe('validateManifest', () => {
   })
 
   it('rejects a manifest with minShellApi greater than SHELL_API_VERSION', () => {
-    expect(validateManifest({ version: '1.2.3', sha256: 'abc', minShellApi: 2 })).toBe(false)
+    expect(
+      validateManifest({ version: '1.2.3', sha256: 'abc', minShellApi: SHELL_API_VERSION + 1 })
+    ).toBe(false)
   })
 
   it('rejects a non-string version', () => {
