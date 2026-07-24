@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, session, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, screen, session, shell, ipcMain, desktopCapturer } from 'electron'
 import { join } from 'path'
 import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -48,11 +48,27 @@ function createWindow(): BrowserWindow {
   })
 
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
-    cb(permission === 'media')
+    cb(permission === 'media' || permission === 'display-capture')
   })
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    // 'display-capture' isn't in this handler's permission union in Electron 39 —
+    // display-media access is gated solely by setDisplayMediaRequestHandler below.
     return permission === 'media'
   })
+
+  // System-audio visualizer: Windows-only loopback capture via getDisplayMedia.
+  // A video source is required by Chromium's display-media flow even though we
+  // only want audio — the renderer stops the video track immediately on receipt.
+  if (process.platform === 'win32') {
+    session.defaultSession.setDisplayMediaRequestHandler(
+      async (_request, callback) => {
+        const sources = await desktopCapturer.getSources({ types: ['screen'] })
+        if (sources[0]) callback({ video: sources[0], audio: 'loopback' })
+        else callback({})
+      },
+      { useSystemPicker: false }
+    )
+  }
 
   win.on('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler((details) => {
