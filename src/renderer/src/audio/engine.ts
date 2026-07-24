@@ -11,6 +11,7 @@ export interface Chain {
   convolver: ConvolverNode
   compressor: DynamicsCompressorNode
   analyser: AnalyserNode
+  micAnalyser: AnalyserNode
 }
 
 // Replaces buildChain's default source->micGain edge with
@@ -30,6 +31,10 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   const compressor = ctx.createDynamicsCompressor()
   const analyser = ctx.createAnalyser()
   analyser.fftSize = 256
+  // Tapped straight off the raw mic source (pre-gain/effects) so the level
+  // meter reflects the physical mic signal, not the user's gain setting.
+  const micAnalyser = ctx.createAnalyser()
+  micAnalyser.fftSize = 512
 
   const [l, r] = generateHallIR(ctx.sampleRate)
   const ir = ctx.createBuffer(2, l.length, ctx.sampleRate)
@@ -43,6 +48,7 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   compressor.release.value = 0.2
 
   source.connect(micGain)
+  source.connect(micAnalyser)
   micGain.connect(dryGain)
   micGain.connect(convolver)
   convolver.connect(wetGain)
@@ -54,7 +60,7 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   const { dry, wet } = mixGains(0.35)
   dryGain.gain.value = dry
   wetGain.gain.value = wet
-  return { source, micGain, dryGain, wetGain, convolver, compressor, analyser }
+  return { source, micGain, dryGain, wetGain, convolver, compressor, analyser, micAnalyser }
 }
 
 export class AudioEngine {
@@ -118,6 +124,10 @@ export class AudioEngine {
 
   getAnalyser(): AnalyserNode | null {
     return this.chain?.analyser ?? null
+  }
+
+  getMicAnalyser(): AnalyserNode | null {
+    return this.chain?.micAnalyser ?? null
   }
 
   setAutotuneEnabled(enabled: boolean, strength = 1): void {

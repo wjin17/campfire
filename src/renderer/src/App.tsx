@@ -4,6 +4,7 @@ import { NOTE_ORDER, type NoteName, type Mode } from './audio/autotune/scale'
 import Visualizer from './components/Visualizer'
 import Tuner from './components/Tuner'
 import Lyrics from './components/Lyrics'
+import MicLevel from './components/MicLevel'
 
 type SettingsPartial = Parameters<typeof window.api.saveSettings>[0]
 const SETTINGS_DEBOUNCE_MS = 300
@@ -210,18 +211,21 @@ export default function App(): React.JSX.Element {
       {expanded && (
         <div className="expanded-body no-drag">
           <div className="section">
-            <select
-              className="select"
-              value={deviceId}
-              onChange={(e) => setDeviceId(e.target.value)}
-            >
-              <option value="">Default mic</option>
-              {devices.map((d) => (
-                <option key={d.deviceId} value={d.deviceId}>
-                  {d.label || 'Microphone'}
-                </option>
-              ))}
-            </select>
+            <div className="mic-device">
+              <select
+                className="select"
+                value={deviceId}
+                onChange={(e) => setDeviceId(e.target.value)}
+              >
+                <option value="">Default mic</option>
+                {devices.map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label || 'Microphone'}
+                  </option>
+                ))}
+              </select>
+              {micOn && <MicLevel engineRef={engine} active={micOn} />}
+            </div>
             <label className="control">
               Gain
               <input

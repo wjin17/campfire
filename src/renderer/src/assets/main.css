@@ -426,6 +426,27 @@ body {
   color: var(--slate-950);
 }
 
+.mic-device {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mic-level {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--control-bg);
+  box-shadow: var(--shadow-ring);
+}
+
+.mic-level-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
 .select {
   height: 32px;
   padding: 0 10px;
