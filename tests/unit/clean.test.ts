@@ -58,4 +58,23 @@ describe('cleanTitle', () => {
       artist: 'Artist Name'
     })
   })
+
+  it('strips a multi-artist feat. clause without garbling the trailing bracket content', () => {
+    expect(cleanTitle('Song (feat. A, B & C)')).toEqual({ title: 'Song' })
+  })
+
+  it('splits artist/title on an en dash', () => {
+    expect(cleanTitle('Artist – Song (Official Video)')).toEqual({
+      title: 'Song',
+      artist: 'Artist'
+    })
+  })
+
+  it('splits artist/title on an em dash', () => {
+    expect(cleanTitle('Artist — Song')).toEqual({ title: 'Song', artist: 'Artist' })
+  })
+
+  it('strips one level of nested brackets when the outer group is noise', () => {
+    expect(cleanTitle('Song [Official Video (HD)]')).toEqual({ title: 'Song' })
+  })
 })
