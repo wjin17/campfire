@@ -3,6 +3,9 @@ import { AudioEngine } from './audio/engine'
 import { NOTE_ORDER, type NoteName, type Mode } from './audio/autotune/scale'
 import Visualizer from './components/Visualizer'
 
+type SettingsPartial = Parameters<typeof window.api.saveSettings>[0]
+const SETTINGS_DEBOUNCE_MS = 300
+
 export default function App(): React.JSX.Element {
   const engine = useRef(new AudioEngine())
   const [micOn, setMicOn] = useState(false)
@@ -10,6 +13,7 @@ export default function App(): React.JSX.Element {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [deviceId, setDeviceId] = useState<string>('')
   const [expanded, setExpanded] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [gain, setGain] = useState(1)
   const [reverb, setReverb] = useState(0.35)
   const [autotune, setAutotune] = useState(false)
@@ -18,6 +22,26 @@ export default function App(): React.JSX.Element {
   const [mode, setMode] = useState<Mode>('chromatic')
   const [strength, setStrength] = useState(1)
   const [lyricsLeadMs, setLyricsLeadMs] = useState(250)
+
+  const pendingSaveRef = useRef<SettingsPartial>({})
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const persistDebounced = (partial: SettingsPartial): void => {
+    pendingSaveRef.current = { ...pendingSaveRef.current, ...partial }
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      const toSave = pendingSaveRef.current
+      pendingSaveRef.current = {}
+      window.api.saveSettings(toSave)
+    }, SETTINGS_DEBOUNCE_MS)
+  }
+  useEffect(() => {
+    return () => {
+      if (!saveTimerRef.current) return
+      clearTimeout(saveTimerRef.current)
+      if (Object.keys(pendingSaveRef.current).length)
+        window.api.saveSettings(pendingSaveRef.current)
+    }
+  }, [])
 
   const refreshDevices = async (): Promise<void> => {
     const all = await navigator.mediaDevices.enumerateDevices()
@@ -44,6 +68,11 @@ export default function App(): React.JSX.Element {
       setMode(settings.autotune.mode as Mode)
       setStrength(settings.autotune.strength)
       setLyricsLeadMs(settings.lyricsLeadMs)
+      // mic may already be running (started before this settled) — push the
+      // loaded values into the live chain too, not just React state
+      engine.current.setMicGain(settings.micGain)
+      engine.current.setReverbMix(settings.reverbMix)
+      setHydrated(true)
     })
   }, [])
 
@@ -130,7 +159,7 @@ export default function App(): React.JSX.Element {
   }
 
   return (
-    <div className="widget">
+    <div className={`widget ${hydrated ? '' : 'pre-hydrate'}`}>
       <div className="header">
         <button
           className={`mic-pill no-drag ${micOn ? 'btn-active' : ''}`}
@@ -183,7 +212,7 @@ export default function App(): React.JSX.Element {
                   const v = +e.target.value
                   setGain(v)
                   engine.current.setMicGain(v)
-                  window.api.saveSettings({ micGain: v })
+                  persistDebounced({ micGain: v })
                 }}
               />
             </label>
@@ -199,7 +228,7 @@ export default function App(): React.JSX.Element {
                   const v = +e.target.value
                   setReverb(v)
                   engine.current.setReverbMix(v)
-                  window.api.saveSettings({ reverbMix: v })
+                  persistDebounced({ reverbMix: v })
                 }}
               />
             </label>
@@ -265,9 +294,7 @@ export default function App(): React.JSX.Element {
                   const v = +e.target.value
                   setStrength(v)
                   engine.current.setAutotuneStrength(v)
-                  window.api.saveSettings({
-                    autotune: { enabled: autotune, root, mode, strength: v }
-                  })
+                  persistDebounced({ autotune: { enabled: autotune, root, mode, strength: v } })
                 }}
               />
             </label>
@@ -288,7 +315,7 @@ export default function App(): React.JSX.Element {
               onChange={(e) => {
                 const v = +e.target.value
                 setLyricsLeadMs(v)
-                window.api.saveSettings({ lyricsLeadMs: v })
+                persistDebounced({ lyricsLeadMs: v })
               }}
             />
           </label>

@@ -32,6 +32,10 @@ body {
   overflow: hidden;
 }
 
+.widget.pre-hydrate {
+  visibility: hidden;
+}
+
 .header {
   height: 96px;
   flex: 0 0 auto;
