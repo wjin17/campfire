@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, screen, session, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -80,10 +80,13 @@ function createWindow(): BrowserWindow {
 }
 
 function setExpanded(win: BrowserWindow, expanded: boolean): void {
-  const [x, y] = win.getPosition()
+  const bounds = win.getBounds()
   const size = expanded ? EXPANDED_SIZE : SMALL_SIZE
-  win.setBounds({ x, y, width: size.width, height: size.height })
-  saveSettings({ expanded })
+  const workArea = screen.getDisplayMatching(bounds).workArea
+  const deltaHeight = size.height - bounds.height
+  const y = Math.max(bounds.y - deltaHeight, workArea.y)
+  win.setBounds({ x: bounds.x, y, width: size.width, height: size.height })
+  saveSettings({ x: bounds.x, y, expanded })
 }
 
 function spawnSmtcHelper(win: BrowserWindow): void {
