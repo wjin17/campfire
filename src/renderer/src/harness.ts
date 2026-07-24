@@ -1,4 +1,4 @@
-import { buildChain } from './audio/engine'
+import { buildChain, wireAutotune } from './audio/engine'
 import { mixGains } from './audio/mix'
 import { createAutotuneNode } from './audio/autotune/autotune-node'
 
@@ -27,6 +27,7 @@ declare global {
       pitchCount: number
       outputHz: number
     }>
+    testChainSinglePath: () => Promise<{ outputRms: number; inputRms: number; outputHz: number }>
   }
 }
 
@@ -99,4 +100,42 @@ window.testTunerPitch = async () => {
     pitchCount: semitones.length,
     outputHz: estimateFreq(rendered.getChannelData(0), sr, sr)
   }
+}
+
+// Regression coverage for engine.ts's start(): buildChain wires source
+// straight to micGain by default, and start() must replace that edge with
+// source->worklet->micGain rather than adding a second parallel edge. A
+// doubled path sums two in-phase copies of the signal, so RMS reads ~2x.
+window.testChainSinglePath = async () => {
+  const sr = 44100
+  const ctx = new OfflineAudioContext(1, sr * 2, sr)
+  const osc = ctx.createOscillator()
+  osc.frequency.value = 449
+  const preGain = ctx.createGain()
+  preGain.gain.value = 0.01 // stay well under the compressor's knee region
+  osc.connect(preGain)
+
+  const chain = buildChain(ctx, preGain)
+  const { dry, wet } = mixGains(0)
+  chain.dryGain.gain.value = dry
+  chain.wetGain.gain.value = wet
+
+  const at = await createAutotuneNode(ctx)
+  at.setControl(at.portMap.amount, 0)
+  at.setControl(at.portMap.mix, 0)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  wireAutotune(chain, at)
+
+  osc.start()
+  const rendered = await ctx.startRendering()
+  const data = rendered.getChannelData(0)
+
+  const from = sr
+  let sumSq = 0
+  for (let i = from; i < data.length; i++) sumSq += data[i] * data[i]
+  const outputRms = Math.sqrt(sumSq / (data.length - from))
+  const inputRms = preGain.gain.value / Math.SQRT2
+
+  return { outputRms, inputRms, outputHz: estimateFreq(data, sr, from) }
 }

@@ -13,6 +13,15 @@ export interface Chain {
   analyser: AnalyserNode
 }
 
+// Replaces buildChain's default source->micGain edge with
+// source->worklet->micGain, so the dry signal can't bleed past the worklet
+// in parallel with the corrected one.
+export function wireAutotune(chain: Chain, autotune: AutotuneHandle): void {
+  chain.source.disconnect(chain.micGain)
+  chain.source.connect(autotune.node)
+  autotune.node.connect(chain.micGain)
+}
+
 export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   const micGain = ctx.createGain()
   const dryGain = ctx.createGain()
@@ -72,14 +81,12 @@ export class AudioEngine {
     this.chain = buildChain(this.ctx, source)
     try {
       this.autotune = await createAutotuneNode(this.ctx)
-      this.chain.source.connect(this.autotune.node)
-      this.autotune.node.connect(this.chain.micGain)
+      wireAutotune(this.chain, this.autotune)
       this.applyScale()
       this.setAutotuneEnabled(false)
       this.wirePitch()
     } catch {
       this.autotune = null
-      this.chain.source.connect(this.chain.micGain)
     }
   }
 
@@ -91,6 +98,7 @@ export class AudioEngine {
     this.chain = null
     this.micStream = null
     this.autotune = null
+    this.pitchCb = null
   }
 
   get autotuneAvailable(): boolean {
