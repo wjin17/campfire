@@ -10,11 +10,15 @@ export interface ActiveTrack {
   duration: number
 }
 
-type Source = 'extension' | 'smtc'
+type Source = 'extension-active' | 'extension-any' | 'smtc'
 
 export class LyricsClock {
   private nowFn: () => number
-  private extension: NowPlaying | null = null
+  // Tracked separately from extensionAny so a background tab's more recent
+  // message can never displace a still-fresh active-tab one — see
+  // activeSource() below.
+  private extensionActive: NowPlaying | null = null
+  private extensionAny: NowPlaying | null = null
   private smtc: NowPlaying | null = null
 
   constructor(nowFn: () => number = Date.now) {
@@ -22,17 +26,30 @@ export class LyricsClock {
   }
 
   update(msg: NowPlaying): void {
-    if (msg.source === 'extension') this.extension = msg
-    else this.smtc = msg
+    if (msg.source === 'extension') {
+      this.extensionAny = msg
+      if (msg.active) this.extensionActive = msg
+    } else {
+      this.smtc = msg
+    }
   }
 
   // Extension wins whenever its last message is still fresh, regardless of
   // which source's message arrived most recently — this is what gives the
   // hysteresis: a single stray smtc message can never flip activeness away
   // from a fresh extension, only a full EXTENSION_STALE_MS silence can.
+  // Within "extension", an active-tab message is preferred over a
+  // background-tab one whenever it is itself still fresh; only once the
+  // active-tab message goes stale do we fall back to any fresh extension
+  // message, and only once no extension message is fresh do we fall back
+  // to smtc.
   private activeSource(): Source | null {
-    if (this.extension && this.nowFn() - this.extension.ts < EXTENSION_STALE_MS) {
-      return 'extension'
+    const now = this.nowFn()
+    if (this.extensionActive && now - this.extensionActive.ts < EXTENSION_STALE_MS) {
+      return 'extension-active'
+    }
+    if (this.extensionAny && now - this.extensionAny.ts < EXTENSION_STALE_MS) {
+      return 'extension-any'
     }
     if (this.smtc) return 'smtc'
     return null
@@ -40,7 +57,8 @@ export class LyricsClock {
 
   active(): NowPlaying | null {
     const source = this.activeSource()
-    if (source === 'extension') return this.extension
+    if (source === 'extension-active') return this.extensionActive
+    if (source === 'extension-any') return this.extensionAny
     if (source === 'smtc') return this.smtc
     return null
   }

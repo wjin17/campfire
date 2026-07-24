@@ -69,6 +69,43 @@ describe('LyricsClock', () => {
     t = 4999
     expect(clock.now(0)).toBe(10)
   })
+
+  it('prefers an active-tab extension message over a background-tab one', () => {
+    const t = 1000
+    const clock = new LyricsClock(() => t)
+    clock.update(msg({ position: 5, ts: 1000, active: false }))
+    clock.update(msg({ position: 20, ts: 1000, active: true }))
+    expect(clock.now(0)).toBe(20)
+  })
+
+  it('keeps preferring the active-tab message even after a newer background one arrives', () => {
+    let t = 0
+    const clock = new LyricsClock(() => t)
+    clock.update(msg({ position: 20, ts: 0, active: true, playing: false }))
+    t = 100
+    clock.update(msg({ position: 5, ts: 100, active: false, playing: false }))
+    expect(clock.now(0)).toBe(20)
+  })
+
+  it('falls back to a background extension message once the active one goes stale', () => {
+    let t = 0
+    const clock = new LyricsClock(() => t)
+    clock.update(msg({ position: 20, ts: 0, active: true, playing: false }))
+    t = 3000
+    clock.update(msg({ position: 5, ts: 3000, active: false, playing: false }))
+    t = 5100
+    expect(clock.now(0)).toBe(5)
+  })
+
+  it('prefers a background extension message over smtc', () => {
+    const t = 1000
+    const clock = new LyricsClock(() => t)
+    clock.update(msg({ source: 'smtc', position: 50, ts: 1000, playing: false }))
+    clock.update(
+      msg({ source: 'extension', position: 10, ts: 1000, playing: false, active: false })
+    )
+    expect(clock.now(0)).toBe(10)
+  })
 })
 
 describe('LyricsClock.activeTrack', () => {

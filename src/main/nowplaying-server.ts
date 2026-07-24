@@ -9,6 +9,7 @@ export interface NowPlaying {
   duration: number
   playing: boolean
   ts: number
+  active?: boolean
 }
 
 export function parseNowPlaying(raw: string): NowPlaying | null {
@@ -27,7 +28,7 @@ export function parseNowPlaying(raw: string): NowPlaying | null {
   if (typeof m.duration !== 'number') return null
   if (typeof m.playing !== 'boolean') return null
   if (typeof m.ts !== 'number') return null
-  return {
+  const result: NowPlaying = {
     source: m.source,
     title: m.title,
     artist: m.artist,
@@ -36,6 +37,8 @@ export function parseNowPlaying(raw: string): NowPlaying | null {
     playing: m.playing,
     ts: m.ts
   }
+  if (typeof m.active === 'boolean') result.active = m.active
+  return result
 }
 
 function wireConnections(wss: WebSocketServer, win: BrowserWindow): void {

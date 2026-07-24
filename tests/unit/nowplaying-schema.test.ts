@@ -26,6 +26,15 @@ describe('parseNowPlaying', () => {
     expect(parseNowPlaying(JSON.stringify(msg))).toEqual(valid)
   })
 
+  it('passes the active field through when present', () => {
+    const msg = { ...valid, active: true }
+    expect(parseNowPlaying(JSON.stringify(msg))).toEqual(msg)
+  })
+
+  it('omits active when absent, rather than defaulting it', () => {
+    expect(parseNowPlaying(JSON.stringify(valid))).not.toHaveProperty('active')
+  })
+
   it('rejects an unknown source', () => {
     const msg = { ...valid, source: 'spotify' }
     expect(parseNowPlaying(JSON.stringify(msg))).toBeNull()

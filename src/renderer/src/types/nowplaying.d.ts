@@ -6,4 +6,5 @@ export interface NowPlaying {
   duration: number
   playing: boolean
   ts: number
+  active?: boolean
 }

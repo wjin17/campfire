@@ -23,7 +23,8 @@
         position: video.currentTime,
         duration: video.duration || 0,
         playing: !video.paused,
-        ts: Date.now()
+        ts: Date.now(),
+        active: document.visibilityState === 'visible'
       })
     )
   }
