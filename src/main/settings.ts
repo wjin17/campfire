@@ -18,6 +18,7 @@ export interface Settings {
   autotune: AutotuneSettings
   lyricsLeadMs: number
   wsPort?: number
+  lrclibBase?: string
 }
 
 const DEFAULT_SETTINGS: Settings = {

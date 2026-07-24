@@ -141,6 +141,37 @@ body {
   min-height: 64px;
 }
 
+.lyrics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  text-align: center;
+}
+
+.lyrics-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.lyrics-line {
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 1.4em;
+}
+
+.lyrics-prev,
+.lyrics-next {
+  color: var(--text-muted);
+}
+
+.lyrics-current {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .tuner {
   display: flex;
   flex-direction: column;

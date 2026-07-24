@@ -3,6 +3,7 @@ import { AudioEngine } from './audio/engine'
 import { NOTE_ORDER, type NoteName, type Mode } from './audio/autotune/scale'
 import Visualizer from './components/Visualizer'
 import Tuner from './components/Tuner'
+import Lyrics from './components/Lyrics'
 
 type SettingsPartial = Parameters<typeof window.api.saveSettings>[0]
 const SETTINGS_DEBOUNCE_MS = 300
@@ -294,7 +295,7 @@ export default function App(): React.JSX.Element {
 
           <div className="divider" />
 
-          <div className="lyrics" />
+          <Lyrics leadMs={lyricsLeadMs} />
 
           <label className="control">
             Lyrics lead ({lyricsLeadMs} ms)
