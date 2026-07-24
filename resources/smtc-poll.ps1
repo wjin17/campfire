@@ -49,7 +49,9 @@ while ($true) {
         position = [math]::Round($timeline.Position.TotalSeconds, 3)
         duration = [math]::Round($timeline.EndTime.TotalSeconds, 3)
         playing  = $isPlaying
-        ts       = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        # position is only refreshed by players on seek/state change, so ts must
+        # be when SMTC captured it, not now — the renderer interpolates from ts
+        ts       = ([DateTimeOffset]$timeline.LastUpdatedTime).ToUnixTimeMilliseconds()
       }
 
       Write-Line ($payload | ConvertTo-Json -Compress)
