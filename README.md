@@ -1,6 +1,10 @@
-# karaoke-tmp
+# Campfire
 
-An Electron application with React and TypeScript
+Vocal effects and synced lyrics for whatever you're playing. An always-on-top
+desktop widget with reverb, autotune, a tuner, and lyrics that follow the song
+detected from your browser or Windows media session.
+
+**Downloads: https://wjin17.github.io/campfire/**
 
 ## Recommended IDE Setup
 
