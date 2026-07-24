@@ -1,11 +1,28 @@
 import { app, BrowserWindow, session, shell, ipcMain } from 'electron'
 import { join } from 'path'
+import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { loadSettings, saveSettings } from './settings'
+import { startNowPlayingServer, parseNowPlaying } from './nowplaying-server'
+import { createTray, setTrayMicActive } from './tray'
 
-function createWindow(): void {
+const SMALL_SIZE = { width: 320, height: 96 }
+const EXPANDED_SIZE = { width: 400, height: 560 }
+const WS_PORT_PRIMARY = 17640
+const WS_PORT_FALLBACK = 17641
+const SMTC_MAX_RESPAWNS = 3
+
+let mainWindow: BrowserWindow | null = null
+let smtcProcess: ChildProcessWithoutNullStreams | null = null
+let smtcRespawnCount = 0
+
+function createWindow(): BrowserWindow {
+  const settings = loadSettings()
+  const size = settings.expanded ? EXPANDED_SIZE : SMALL_SIZE
   const win = new BrowserWindow({
-    width: 320,
-    height: 96,
+    ...size,
+    x: settings.x,
+    y: settings.y,
     frame: false,
     alwaysOnTop: true,
     resizable: false,
@@ -29,17 +46,68 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  const persistPosition = (): void => {
+    const [x, y] = win.getPosition()
+    saveSettings({ x, y })
+  }
+  win.on('moved', persistPosition)
+  win.on('close', persistPosition)
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return win
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+function setExpanded(win: BrowserWindow, expanded: boolean): void {
+  const [x, y] = win.getPosition()
+  const size = expanded ? EXPANDED_SIZE : SMALL_SIZE
+  win.setBounds({ x, y, width: size.width, height: size.height })
+  saveSettings({ expanded })
+}
+
+function spawnSmtcHelper(win: BrowserWindow): void {
+  if (process.platform !== 'win32') return
+
+  const scriptPath = join(__dirname, '../../resources/smtc-poll.ps1')
+  const child = spawn('powershell.exe', [
+    '-NoProfile',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-File',
+    scriptPath
+  ])
+  smtcProcess = child
+
+  let buffer = ''
+  child.stdout.on('data', (chunk: Buffer) => {
+    buffer += chunk.toString()
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      const msg = parseNowPlaying(trimmed)
+      if (msg) win.webContents.send('now-playing', msg)
+    }
+  })
+
+  child.on('exit', () => {
+    smtcProcess = null
+    if (smtcRespawnCount < SMTC_MAX_RESPAWNS) {
+      smtcRespawnCount++
+      setTimeout(() => spawnSmtcHelper(win), 1000 * smtcRespawnCount)
+    }
+  })
+}
+
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -50,15 +118,30 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  mainWindow = createWindow()
+  createTray(mainWindow)
+  spawnSmtcHelper(mainWindow)
 
-  createWindow()
+  const { port } = await startNowPlayingServer(mainWindow, WS_PORT_PRIMARY, WS_PORT_FALLBACK)
+  saveSettings({ wsPort: port })
+
+  ipcMain.handle('get-settings', () => loadSettings())
+  ipcMain.handle('save-settings', (_e, partial) => saveSettings(partial))
+  ipcMain.handle('set-expanded', (_e, expanded: boolean) => {
+    if (mainWindow) setExpanded(mainWindow, expanded)
+  })
+  ipcMain.handle('payload-version', () => app.getVersion())
+  ipcMain.on('minimize-to-tray', () => {
+    mainWindow?.hide()
+  })
+  ipcMain.on('set-mic-active', (_e, active: boolean) => {
+    if (mainWindow) setTrayMicActive(mainWindow, active)
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow()
   })
 })
 
@@ -69,6 +152,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  smtcProcess?.kill()
 })
 
 // In this file you can include the rest of your app's specific main process
