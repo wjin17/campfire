@@ -26,6 +26,10 @@ describe('compareSemver', () => {
   it('ignores prerelease suffixes when comparing', () => {
     expect(compareSemver('1.2.3-beta.1', '1.2.3')).toBe(0)
   })
+
+  it('compares numerically, not lexicographically', () => {
+    expect(compareSemver('10.0.0', '9.0.0')).toBe(1)
+  })
 })
 
 describe('pickPayloadAssets', () => {

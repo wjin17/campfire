@@ -1,5 +1,5 @@
 import { net } from 'electron'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { createHash } from 'crypto'
 import { join } from 'path'
 import extractZip from 'extract-zip'
@@ -130,8 +130,15 @@ export async function checkForPayloadUpdate(userDataDir: string): Promise<void> 
     writeFileSync(tempZipPath, zipBuf)
 
     const targetDir = join(payloadsDir, manifest.version)
+    const stagingDir = join(payloadsDir, `${manifest.version}.tmp-${process.pid}`)
     try {
-      await extractZip(tempZipPath, { dir: targetDir })
+      rmSync(stagingDir, { recursive: true, force: true })
+      await extractZip(tempZipPath, { dir: stagingDir })
+      rmSync(targetDir, { recursive: true, force: true })
+      renameSync(stagingDir, targetDir)
+    } catch (err) {
+      rmSync(stagingDir, { recursive: true, force: true })
+      throw err
     } finally {
       rmSync(tempZipPath, { force: true })
     }
@@ -141,7 +148,10 @@ export async function checkForPayloadUpdate(userDataDir: string): Promise<void> 
       dir: targetDir,
       ...(current ? { previous: { version: current.version, dir: current.dir } } : {})
     }
-    writeFileSync(currentJsonPath(userDataDir), JSON.stringify(next, null, 2))
+    const currentJson = currentJsonPath(userDataDir)
+    const currentJsonTmp = `${currentJson}.tmp`
+    writeFileSync(currentJsonTmp, JSON.stringify(next, null, 2))
+    renameSync(currentJsonTmp, currentJson)
   } catch (err) {
     console.error('payload update check failed', err)
   }
