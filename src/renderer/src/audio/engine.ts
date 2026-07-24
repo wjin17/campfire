@@ -10,6 +10,7 @@ export interface Chain {
   wetGain: GainNode
   convolver: ConvolverNode
   compressor: DynamicsCompressorNode
+  analyser: AnalyserNode
 }
 
 export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
@@ -18,6 +19,8 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   const wetGain = ctx.createGain()
   const convolver = ctx.createConvolver()
   const compressor = ctx.createDynamicsCompressor()
+  const analyser = ctx.createAnalyser()
+  analyser.fftSize = 256
 
   const [l, r] = generateHallIR(ctx.sampleRate)
   const ir = ctx.createBuffer(2, l.length, ctx.sampleRate)
@@ -37,11 +40,12 @@ export function buildChain(ctx: BaseAudioContext, source: AudioNode): Chain {
   dryGain.connect(compressor)
   wetGain.connect(compressor)
   compressor.connect(ctx.destination)
+  compressor.connect(analyser)
 
   const { dry, wet } = mixGains(0.35)
   dryGain.gain.value = dry
   wetGain.gain.value = wet
-  return { source, micGain, dryGain, wetGain, convolver, compressor }
+  return { source, micGain, dryGain, wetGain, convolver, compressor, analyser }
 }
 
 export class AudioEngine {
@@ -86,6 +90,10 @@ export class AudioEngine {
     const { dry, wet } = mixGains(v)
     this.chain.dryGain.gain.value = dry
     this.chain.wetGain.gain.value = wet
+  }
+
+  getAnalyser(): AnalyserNode | null {
+    return this.chain?.analyser ?? null
   }
 
   private autotuneLoading = false

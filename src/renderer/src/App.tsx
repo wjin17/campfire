@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AudioEngine } from './audio/engine'
 import { NOTE_ORDER, type NoteName, type Mode } from './audio/autotune/scale'
+import Visualizer from './components/Visualizer'
 
 export default function App(): React.JSX.Element {
   const engine = useRef(new AudioEngine())
@@ -8,6 +9,7 @@ export default function App(): React.JSX.Element {
   const [micError, setMicError] = useState<string | null>(null)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [deviceId, setDeviceId] = useState<string>('')
+  const [expanded, setExpanded] = useState(false)
   const [gain, setGain] = useState(1)
   const [reverb, setReverb] = useState(0.35)
   const [autotune, setAutotune] = useState(false)
@@ -15,6 +17,7 @@ export default function App(): React.JSX.Element {
   const [root, setRoot] = useState<NoteName>('C')
   const [mode, setMode] = useState<Mode>('chromatic')
   const [strength, setStrength] = useState(1)
+  const [lyricsLeadMs, setLyricsLeadMs] = useState(250)
 
   const refreshDevices = async (): Promise<void> => {
     const all = await navigator.mediaDevices.enumerateDevices()
@@ -31,6 +34,27 @@ export default function App(): React.JSX.Element {
     gainRef.current = gain
     reverbRef.current = reverb
   })
+
+  useEffect(() => {
+    window.api.getSettings().then((settings) => {
+      setExpanded(settings.expanded)
+      setGain(settings.micGain)
+      setReverb(settings.reverbMix)
+      setRoot(settings.autotune.root as NoteName)
+      setMode(settings.autotune.mode as Mode)
+      setStrength(settings.autotune.strength)
+      setLyricsLeadMs(settings.lyricsLeadMs)
+    })
+  }, [])
+
+  const toggleMicRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    return window.api.onTrayMicToggle(() => toggleMicRef.current())
+  }, [])
+
+  useEffect(() => {
+    window.api.setMicActive(micOn)
+  }, [micOn])
 
   useEffect(() => {
     const onDeviceChange = async (): Promise<void> => {
@@ -59,7 +83,7 @@ export default function App(): React.JSX.Element {
   }, [])
 
   const toggleMic = async (): Promise<void> => {
-    if (micOn) {
+    if (micOnRef.current) {
       engine.current.stop()
       setMicOn(false)
       setAutotune(false)
@@ -68,20 +92,24 @@ export default function App(): React.JSX.Element {
     try {
       setMicError(null)
       setAutotuneError(false)
-      await engine.current.start(deviceId || undefined)
-      engine.current.setMicGain(gain)
-      engine.current.setReverbMix(reverb)
+      await engine.current.start(deviceIdRef.current || undefined)
+      engine.current.setMicGain(gainRef.current)
+      engine.current.setReverbMix(reverbRef.current)
       setMicOn(true)
       refreshDevices()
     } catch {
       setMicError('Mic access denied — allow it and retry')
     }
   }
+  useEffect(() => {
+    toggleMicRef.current = toggleMic
+  })
 
   const toggleAutotune = async (): Promise<void> => {
     if (autotune) {
       engine.current.disableAutotune()
       setAutotune(false)
+      window.api.saveSettings({ autotune: { enabled: false, root, mode, strength } })
       return
     }
     try {
@@ -89,113 +117,186 @@ export default function App(): React.JSX.Element {
       engine.current.setAutotuneStrength(strength)
       engine.current.setAutotuneScale(root, mode)
       setAutotune(true)
+      window.api.saveSettings({ autotune: { enabled: true, root, mode, strength } })
     } catch {
       setAutotuneError(true)
     }
   }
 
+  const toggleExpanded = async (): Promise<void> => {
+    const next = !expanded
+    setExpanded(next)
+    await window.api.setExpanded(next)
+  }
+
   return (
-    <div className="bar">
-      <div className="bar-group">
-        <button className={`btn ${micOn ? 'btn-active' : ''}`} onClick={toggleMic}>
-          {micOn ? 'Mic Off' : 'Mic On'}
-        </button>
-        <select className="select" value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
-          <option value="">Default mic</option>
-          {devices.map((d) => (
-            <option key={d.deviceId} value={d.deviceId}>
-              {d.label || 'Microphone'}
-            </option>
-          ))}
-        </select>
-        <label className="control">
-          Gain
-          <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.01"
-            value={gain}
-            onChange={(e) => {
-              setGain(+e.target.value)
-              engine.current.setMicGain(+e.target.value)
-            }}
-          />
-        </label>
-      </div>
-      <div className="bar-divider" />
-      <div className="bar-group">
-        <label className="control">
-          Reverb
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={reverb}
-            onChange={(e) => {
-              setReverb(+e.target.value)
-              engine.current.setReverbMix(+e.target.value)
-            }}
-          />
-        </label>
-      </div>
-      <div className="bar-divider" />
-      <div className="bar-group">
+    <div className="widget">
+      <div className="header">
         <button
-          className={`btn ${autotune ? 'btn-active' : ''}`}
-          onClick={toggleAutotune}
-          disabled={!micOn || autotuneError}
-          title={autotuneError ? 'Autotune failed to load' : ''}
+          className={`mic-pill no-drag ${micOn ? 'btn-active' : ''}`}
+          onClick={toggleMic}
+          title={micOn ? 'Mic on' : 'Mic off'}
         >
-          {autotune ? 'Autotune On' : 'Autotune Off'}
+          {micOn ? 'Mic On' : 'Mic Off'}
         </button>
-        <select
-          className="select"
-          value={mode}
-          disabled={!autotune}
-          onChange={(e) => {
-            const m = e.target.value as Mode
-            setMode(m)
-            engine.current.setAutotuneScale(root, m)
-          }}
+        <Visualizer engineRef={engine} active={micOn} />
+        <button
+          className="icon-btn no-drag"
+          onClick={toggleExpanded}
+          title={expanded ? 'Collapse' : 'Expand'}
         >
-          <option value="chromatic">Chromatic</option>
-          <option value="major">Major</option>
-          <option value="minor">Minor</option>
-        </select>
-        <select
-          className="select"
-          value={root}
-          disabled={!autotune || mode === 'chromatic'}
-          onChange={(e) => {
-            const r = e.target.value as NoteName
-            setRoot(r)
-            engine.current.setAutotuneScale(r, mode)
-          }}
+          <span className={`chevron ${expanded ? 'chevron-up' : 'chevron-down'}`} />
+        </button>
+        <button
+          className="icon-btn no-drag"
+          onClick={() => window.api.minimizeToTray()}
+          title="Minimize to tray"
         >
-          {NOTE_ORDER.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        <label className="control">
-          Strength
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={strength}
-            disabled={!autotune}
-            onChange={(e) => {
-              setStrength(+e.target.value)
-              engine.current.setAutotuneStrength(+e.target.value)
-            }}
-          />
-        </label>
+          &minus;
+        </button>
       </div>
+
+      {expanded && (
+        <div className="expanded-body no-drag">
+          <div className="section">
+            <select
+              className="select"
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
+            >
+              <option value="">Default mic</option>
+              {devices.map((d) => (
+                <option key={d.deviceId} value={d.deviceId}>
+                  {d.label || 'Microphone'}
+                </option>
+              ))}
+            </select>
+            <label className="control">
+              Gain
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={gain}
+                onChange={(e) => {
+                  const v = +e.target.value
+                  setGain(v)
+                  engine.current.setMicGain(v)
+                  window.api.saveSettings({ micGain: v })
+                }}
+              />
+            </label>
+            <label className="control">
+              Reverb
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={reverb}
+                onChange={(e) => {
+                  const v = +e.target.value
+                  setReverb(v)
+                  engine.current.setReverbMix(v)
+                  window.api.saveSettings({ reverbMix: v })
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="divider" />
+
+          <div className="section">
+            <button
+              className={`btn ${autotune ? 'btn-active' : ''}`}
+              onClick={toggleAutotune}
+              disabled={!micOn || autotuneError}
+              title={autotuneError ? 'Autotune failed to load' : ''}
+            >
+              {autotune ? 'Autotune On' : 'Autotune Off'}
+            </button>
+            <select
+              className="select"
+              value={mode}
+              disabled={!autotune}
+              onChange={(e) => {
+                const m = e.target.value as Mode
+                setMode(m)
+                engine.current.setAutotuneScale(root, m)
+                window.api.saveSettings({
+                  autotune: { enabled: autotune, root, mode: m, strength }
+                })
+              }}
+            >
+              <option value="chromatic">Chromatic</option>
+              <option value="major">Major</option>
+              <option value="minor">Minor</option>
+            </select>
+            <select
+              className="select"
+              value={root}
+              disabled={!autotune || mode === 'chromatic'}
+              onChange={(e) => {
+                const r = e.target.value as NoteName
+                setRoot(r)
+                engine.current.setAutotuneScale(r, mode)
+                window.api.saveSettings({
+                  autotune: { enabled: autotune, root: r, mode, strength }
+                })
+              }}
+            >
+              {NOTE_ORDER.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <label className="control">
+              Strength
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={strength}
+                disabled={!autotune}
+                onChange={(e) => {
+                  const v = +e.target.value
+                  setStrength(v)
+                  engine.current.setAutotuneStrength(v)
+                  window.api.saveSettings({
+                    autotune: { enabled: autotune, root, mode, strength: v }
+                  })
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="divider" />
+
+          <div className="lyrics" />
+
+          <label className="control">
+            Lyrics lead ({lyricsLeadMs} ms)
+            <input
+              type="range"
+              min="-1000"
+              max="1000"
+              step="10"
+              value={lyricsLeadMs}
+              onChange={(e) => {
+                const v = +e.target.value
+                setLyricsLeadMs(v)
+                window.api.saveSettings({ lyricsLeadMs: v })
+              }}
+            />
+          </label>
+
+          <div className="tuner" />
+        </div>
+      )}
+
       {micOn && <span className="warn">🎧 Use headphones — speakers will feed back</span>}
       {micError && <span className="error">{micError}</span>}
     </div>
