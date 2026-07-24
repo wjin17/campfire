@@ -161,6 +161,7 @@ export default function App(): React.JSX.Element {
           className={`mic-pill no-drag ${micOn ? 'btn-active' : ''}`}
           onClick={toggleMic}
           title={micOn ? 'Mic on' : 'Mic off'}
+          aria-pressed={micOn}
         >
           {micOn ? 'Mic On' : 'Mic Off'}
         </button>
@@ -169,6 +170,7 @@ export default function App(): React.JSX.Element {
           className="icon-btn no-drag"
           onClick={toggleExpanded}
           title={expanded ? 'Collapse' : 'Expand'}
+          aria-label={expanded ? 'Collapse' : 'Expand'}
         >
           <span className={`chevron ${expanded ? 'chevron-up' : 'chevron-down'}`} />
         </button>
@@ -178,6 +180,7 @@ export default function App(): React.JSX.Element {
               className="icon-btn no-drag"
               onClick={() => window.api.windowMinimize?.()}
               title="Minimize"
+              aria-label="Minimize"
             >
               <span className="icon-minimize" />
             </button>
@@ -185,6 +188,7 @@ export default function App(): React.JSX.Element {
               className="icon-btn icon-btn-close no-drag"
               onClick={() => window.api.windowClose?.()}
               title="Close"
+              aria-label="Close"
             >
               <span className="icon-close" />
             </button>
@@ -194,6 +198,7 @@ export default function App(): React.JSX.Element {
             className="icon-btn no-drag"
             onClick={() => window.api.minimizeToTray()}
             title="Minimize to tray"
+            aria-label="Minimize to tray"
           >
             &minus;
           </button>
@@ -320,7 +325,9 @@ export default function App(): React.JSX.Element {
           <Lyrics leadMs={lyricsLeadMs} />
 
           <label className="control">
-            Lyrics lead ({lyricsLeadMs} ms)
+            <span>
+              Lyrics lead (<span className="control-value">{lyricsLeadMs}</span> ms)
+            </span>
             <input
               type="range"
               min="-1000"

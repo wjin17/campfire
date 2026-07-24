@@ -18,6 +18,8 @@ export default function Visualizer({ engineRef, active }: VisualizerProps): Reac
     const ctx2d = canvas.getContext('2d')
     if (!ctx2d) return
 
+    const accent = getComputedStyle(canvas).getPropertyValue('--accent').trim() || '#ff5c7a'
+
     let width = canvas.clientWidth
     let height = canvas.clientHeight
 
@@ -49,7 +51,7 @@ export default function Visualizer({ engineRef, active }: VisualizerProps): Reac
       else data.fill(0)
 
       const barWidth = width / BAR_COUNT
-      ctx2d.fillStyle = '#ff5c7a'
+      ctx2d.fillStyle = accent
       for (let i = 0; i < BAR_COUNT; i++) {
         const value = data[Math.floor((i / BAR_COUNT) * data.length)]
         const barHeight = active ? Math.max(2, (value / 255) * height) : 2

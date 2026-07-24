@@ -84,7 +84,9 @@ export default function Lyrics({ leadMs }: LyricsProps): React.JSX.Element {
   return (
     <div className="lyrics">
       <div className="lyrics-line lyrics-prev">{prev}</div>
-      <div className="lyrics-line lyrics-current">{current}</div>
+      <div className="lyrics-line lyrics-current" key={lineIndex}>
+        {current}
+      </div>
       <div className="lyrics-line lyrics-next">{next}</div>
     </div>
   )
