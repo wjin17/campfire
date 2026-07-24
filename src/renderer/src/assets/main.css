@@ -311,11 +311,14 @@ body {
 
 .tuner {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
   gap: 6px;
-  padding: 10px;
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-ring);
+  background: var(--control-bg);
   transition: opacity 200ms var(--ease-out);
 }
 
@@ -324,44 +327,16 @@ body {
 }
 
 .tuner-note {
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-}
-
-.tuner-needle-track {
-  position: relative;
-  width: 80%;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--bar-border);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.tuner-needle-center {
-  position: absolute;
-  left: 50%;
-  top: -3px;
-  width: 1px;
-  height: 10px;
-  background: var(--control-border);
-  transform: translateX(-50%);
-}
-
-.tuner-needle {
-  position: absolute;
-  top: -3px;
-  width: 3px;
-  height: 10px;
-  border-radius: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 6px 0 color-mix(in oklch, var(--accent) 70%, transparent);
-  transform: translateX(-50%);
-  transition: left 150ms var(--ease-out);
+  min-width: 1.6em;
+  text-align: center;
 }
 
 .tuner-cents {
+  min-width: 3ch;
   font-size: var(--text-2xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;

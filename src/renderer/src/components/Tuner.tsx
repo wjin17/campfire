@@ -24,10 +24,6 @@ export default function Tuner({ engineRef, active }: TunerProps): React.JSX.Elem
   return (
     <div className={`tuner ${confident ? '' : 'tuner-dim'}`}>
       <span className="tuner-note">{note}</span>
-      <div className="tuner-needle-track">
-        <span className="tuner-needle-center" />
-        <span className="tuner-needle" style={{ left: `${50 + cents}%` }} />
-      </div>
       <span className="tuner-cents">{confident ? `${cents > 0 ? '+' : ''}${cents}¢` : ''}</span>
     </div>
   )
